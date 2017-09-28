@@ -10,7 +10,6 @@ Date: 09/28/2017
 """
 
 import numpy as np
-import os
 
 from utils import text_utils as tu
 
@@ -20,8 +19,7 @@ QTYPE_N_TE = 500
 
 # convert the qtype dataset to log normalized bag of words vectors
 def qtype2Bow(train_fp, test_fp, sw_fp):
-    os.chdir('./preprocessing')
-    sentences = []
+    documents = []
     train_Y = np.zeros((QTYPE_N_TR, 1))
     test_Y = np.zeros((QTYPE_N_TE, 1))
 
@@ -32,11 +30,10 @@ def qtype2Bow(train_fp, test_fp, sw_fp):
         label = qtype_label_d[line.split(':')[0]]
 
         # append sample to the sentences corpus
-        sentences.append(sample)
+        documents.append(sample)
 
         # add label to train labels array
         train_Y[i, 0] = label
-
 
     # extract samples and labels from testing data
     for i, line in enumerate(test_fp):
@@ -45,31 +42,20 @@ def qtype2Bow(train_fp, test_fp, sw_fp):
         label = qtype_label_d[line.split(':')[0]]
 
         # append sample to the sentences corpus
-        sentences.append(sample)
+        documents.append(sample)
 
         # add label to train labels array
         test_Y[i, 0] = label
-
-    print(len(sentences))
-    print(train_Y.shape)
-    print(test_Y.shape)
 
     # get stopwords
     stopwords = []
     for i, line in enumerate(sw_fp):
         stopwords.append(line.split()[0])
 
-    # close original data files
-    train_fp.close()
-    test_fp.close()
+    # build the dictionary
+    texts, dictionary = tu.buildDict(documents, stopwords, stem=True)
 
-    # close the stopwords file
-    sw_fp.close()
-
-    tu.buildDict(sentences, stopwords, stem=True)
-
-    train_X = []
-    test_X = []
-
+    train_X = tu.docs2Bow(texts[:QTYPE_N_TR], dictionary)
+    test_X = tu.docs2Bow(texts[-QTYPE_N_TE:], dictionary)
 
     return train_X, train_Y, test_X, test_Y
