@@ -2,8 +2,8 @@
 6000 manually labeled short questions in English text. There are 6 question-type coarse labels (ABBREVIATION, ENTITY, DESCRIPTION, HUMAN, LOCATION and NUMBER) and an additional set of 50 fine labels (e.g. animal, plant, reason, city, date etc.).
 
 # Contents
-*train.txt*: 5500 labeled training questions <br />
-*test.txt*: 500 labeled testing questions
+**train.txt**: 5500 labeled training questions <br />
+**test.txt**: 500 labeled testing questions
 
 # Data Format
 `<coarse class>:<fine class> <question>`
