@@ -10,7 +10,10 @@ Date: 09/07/2017
 import numpy as np
 import gensim
 
-def buildDict(documents, stoplist, stem=False):
+# takes a list of strings, splits them by white space, lowercases all words,
+# filters out stop words, optionally performs stemming and returns tokenized
+# texts
+def filterDocs(documents, stoplist, stem=False):
     # filter text using the stoplist
     texts = [[word for word in document.lower().split() if word not in stoplist]
             for document in documents]
@@ -27,12 +30,17 @@ def buildDict(documents, stoplist, stem=False):
             for text in texts]
     """
 
+    return texts
+
+# needs tokenized texts returned by filterDocs function
+def buildDict(texts):
     # build dictionary
     dictionary = gensim.corpora.Dictionary(texts)
 
-    return texts, dictionary
+    return dictionary
 
-# log normalized bag-of-words
+# needs tokenized texts returned by filterDocs() functions and dictionary
+# returned by buildDict() function
 def docs2Bow(texts, dictionary):
     # initialize bag of words array
     n = len(texts)
@@ -51,5 +59,5 @@ def docs2Bow(texts, dictionary):
         x = np.log(1 + x)
         x = x/np.max(x)
         X[i, :] = x
-    
+
     return X
