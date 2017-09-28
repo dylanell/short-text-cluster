@@ -52,7 +52,7 @@ if __name__ == '__main__':
     sw_fp.close()
 
     # save processed data to the out directory
-    np.savetxt(out_dir + 'train_lnbow.txt', train_X)
-    np.savetxt(out_dir + 'train_label.txt', train_Y)
-    np.savetxt(out_dir + 'test_lnbow.txt', test_X)
-    np.savetxt(out_dir + 'test_label.txt', test_Y)
+    np.savetxt(out_dir + 'train_lnbow.dat', train_X)
+    np.savetxt(out_dir + 'train_label.dat', train_Y)
+    np.savetxt(out_dir + 'test_lnbow.dat', test_X)
+    np.savetxt(out_dir + 'test_label.dat', test_Y)
