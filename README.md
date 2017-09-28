@@ -1,2 +1,2 @@
-# thesis-repo
+# short-text-cluster
 Clustering models for short text
