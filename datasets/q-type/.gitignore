@@ -1,2 +1,3 @@
 # for an preprocessed large data files
 *.dat
+*.sh
