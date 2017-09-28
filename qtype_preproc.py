@@ -42,6 +42,17 @@ if __name__ == '__main__':
     out_dir = sys.argv[3]
 
     # convert question type data to bag of words vectors
-    train_X, train_Y, text_X, text_Y = qtype2Bow(train_fp, test_fp, sw_fp)
+    train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp, sw_fp)
+
+    # close original data files
+    train_fp.close()
+    test_fp.close()
+
+    # close the stopwords file
+    sw_fp.close()
 
     # save processed data to the out directory
+    np.savetxt(out_dir + 'train_lnbow.txt', train_X)
+    np.savetxt(out_dir + 'train_label.txt', train_Y)
+    np.savetxt(out_dir + 'test_lnbow.txt', test_X)
+    np.savetxt(out_dir + 'test_label.txt', test_Y)
