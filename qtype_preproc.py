@@ -12,7 +12,7 @@ Date: 09/28/2017
 import sys
 import numpy as np
 
-from preprocessing.preprocess import qtype2Bow
+from preprocessing.preprocess import qtype2Bow, qtype2DictIndex
 
 if __name__ == '__main__':
     # retrieve command line args
@@ -41,8 +41,29 @@ if __name__ == '__main__':
     # get the out directory
     out_dir = sys.argv[3]
 
+    print('converting to bag-of-words')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp, sw_fp)
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_lnbow.dat', train_X)
+    np.savetxt(out_dir + 'test_lnbow.dat', test_X)
+
+    del train_X
+    del test_X
+
+
+    # convert question type data to trained word2Vec embeddings
+    print('converting to dictionary indices')
+    train_X, _, test_X, _ = qtype2DictIndex(train_fp, test_fp, sw_fp)
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_indices.dat', train_X)
+    np.savetxt(out_dir + 'test_indices.dat', test_X)
+
+    # save label files
+    np.savetxt(out_dir + 'train_label.dat', train_Y)
+    np.savetxt(out_dir + 'test_label.dat', test_Y)
 
     # close original data files
     train_fp.close()
@@ -50,9 +71,3 @@ if __name__ == '__main__':
 
     # close the stopwords file
     sw_fp.close()
-
-    # save processed data to the out directory
-    np.savetxt(out_dir + 'train_lnbow.dat', train_X)
-    np.savetxt(out_dir + 'train_label.dat', train_Y)
-    np.savetxt(out_dir + 'test_lnbow.dat', test_X)
-    np.savetxt(out_dir + 'test_label.dat', test_Y)

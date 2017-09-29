@@ -9,11 +9,15 @@ Date: 09/07/2017
 """
 import numpy as np
 import gensim
+import logging
+import time
+
+NULL = '__'
 
 # takes a list of strings, splits them by white space, lowercases all words,
 # filters out stop words, optionally performs stemming and returns tokenized
 # texts
-def filterDocs(documents, stoplist, stem=False):
+def filterTok(documents, stoplist, stem=False):
     # filter text using the stoplist
     texts = [[word for word in document.lower().split() if word not in stoplist]
             for document in documents]
@@ -41,7 +45,10 @@ def buildDict(texts):
 
 # needs tokenized texts returned by filterDocs() functions and dictionary
 # returned by buildDict() function
-def docs2Bow(texts, dictionary):
+def docs2Bow(texts):
+    # build dictionary
+    dictionary = gensim.corpora.Dictionary(texts)
+
     # initialize bag of words array
     n = len(texts)
     d = len(dictionary)
@@ -60,4 +67,33 @@ def docs2Bow(texts, dictionary):
         x = x/np.max(x)
         X[i, :] = x
 
+    return X
+
+def docs2DictIndex(texts):
+    # insert a null character so that it takes the zeroith spot of the vocab
+    texts.insert(0, [NULL])
+
+    # build dictionary
+    dictionary = gensim.corpora.Dictionary(texts)
+
+    texts.remove([NULL])
+
+    reverse_dictionary = dict()
+
+    for key, value in dictionary.iteritems():
+        reverse_dictionary[value] = key
+
+    # initialize bag of words array
+    n = len(texts)
+    d = max([len(text) for text in texts])
+
+    X = np.zeros((n, d))
+
+    for i, text in enumerate(texts):
+        for j, word in enumerate(text):
+            try:
+                X[i, j] = reverse_dictionary[word]
+            except:
+                X[i, j] = reverse_dictionary[NULL]
+                
     return X
