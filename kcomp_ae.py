@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 3):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./vanilla_ae.py <train_x_fp> <out_dir>')
+        print('[USAGE] ./kcomp_ae.py <train_x_fp> <out_dir>')
         sys.exit()
 
     # get the training data
