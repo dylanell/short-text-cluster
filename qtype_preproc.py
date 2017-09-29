@@ -12,7 +12,7 @@ Date: 09/28/2017
 import sys
 import numpy as np
 
-from preprocessing.preprocess import qtype2Bow, qtype2DictIndex
+from preprocessing.preprocess import qtype2Bow, qtype2DictIndex, qtype2Tfidf
 
 if __name__ == '__main__':
     # retrieve command line args
@@ -41,13 +41,26 @@ if __name__ == '__main__':
     # get the out directory
     out_dir = sys.argv[3]
 
-    print('converting to bag-of-words')
+
+    print('converting to log-normalized bag-of-words')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp, sw_fp)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_lnbow.dat', train_X)
     np.savetxt(out_dir + 'test_lnbow.dat', test_X)
+
+    del train_X
+    del test_X
+
+
+    print('converting to tf-idf')
+    # convert question type data to bag of words vectors
+    train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp, sw_fp)
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_tfidf.dat', train_X)
+    np.savetxt(out_dir + 'test_tfidf.dat', test_X)
 
     del train_X
     del test_X
@@ -60,6 +73,7 @@ if __name__ == '__main__':
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_indices.dat', train_X)
     np.savetxt(out_dir + 'test_indices.dat', test_X)
+
 
     # save label files
     np.savetxt(out_dir + 'train_label.dat', train_Y)

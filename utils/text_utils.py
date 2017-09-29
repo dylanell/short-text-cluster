@@ -43,8 +43,7 @@ def buildDict(texts):
 
     return dictionary
 
-# needs tokenized texts returned by filterDocs() functions and dictionary
-# returned by buildDict() function
+# needs tokenized texts returned by filterDocs() function
 def docs2Bow(texts):
     # build dictionary
     dictionary = gensim.corpora.Dictionary(texts)
@@ -56,8 +55,8 @@ def docs2Bow(texts):
 
     corpus = [dictionary.doc2bow(text) for text in texts]
 
-    for i in range(n):
-        for idx, val in corpus[i]:
+    for i, vec in enumerate(corpus):
+        for idx, val in vec:
             X[i, idx] = val
 
     # log normalize the vectors
@@ -66,6 +65,26 @@ def docs2Bow(texts):
         x = np.log(1 + x)
         x = x/np.max(x)
         X[i, :] = x
+
+    return X
+
+# needs tokenized texts returned by filterDocs() funstion
+def docs2Tfidf(texts):
+    # build dictionary
+    dictionary = gensim.corpora.Dictionary(texts)
+
+    # initialize bag of words array
+    n = len(texts)
+    d = len(dictionary)
+    X = np.zeros((n, d))
+
+    corpus = [dictionary.doc2bow(text) for text in texts]
+
+    tfidf = gensim.models.TfidfModel(corpus)
+
+    for i, vec in enumerate(corpus):
+        for idx, val in tfidf[vec]:
+            X[i, idx] = val
 
     return X
 
@@ -95,5 +114,5 @@ def docs2DictIndex(texts):
                 X[i, j] = reverse_dictionary[word]
             except:
                 X[i, j] = reverse_dictionary[NULL]
-                
+
     return X
