@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # convert sparse matrix X to dense array if using hierarchical clustering
     Y_pred = model.fit_predict(X)
 
-    # get the ARI score of the clustering
-    score = metrics.adjusted_rand_score(Y, Y_pred)
+    # get the NMI score of the clustering
+    score = metrics.normalized_mutual_info_score(Y, Y_pred)
 
     print score
