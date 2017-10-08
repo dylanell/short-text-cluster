@@ -55,7 +55,7 @@ def qtypeSplit(train_fp, test_fp):
 
 
 # convert the qtype dataset to log normalized bag of words vectors
-def qtype2Bow(train_fp, test_fp, sw_fp):
+def qtype2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -70,7 +70,9 @@ def qtype2Bow(train_fp, test_fp, sw_fp):
 
     del documents
 
-    X = tu.docs2Bow(texts)
+    dictionary = tu.buildDict(texts, prune_at=prune_dict)
+
+    X = tu.docs2Bow(texts, dictionary)
 
     del texts
 
@@ -85,7 +87,7 @@ def qtype2Bow(train_fp, test_fp, sw_fp):
     return train_X, train_Y, test_X, test_Y
 
 # convert the qtype dataset to tf-idf vectors
-def qtype2Tfidf(train_fp, test_fp, sw_fp):
+def qtype2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -100,7 +102,9 @@ def qtype2Tfidf(train_fp, test_fp, sw_fp):
 
     del documents
 
-    X = tu.docs2Tfidf(texts)
+    dictionary = tu.buildDict(texts, prune_at=prune_dict)
+
+    X = tu.docs2Tfidf(texts, dictionary)
 
     del texts
 
@@ -114,7 +118,7 @@ def qtype2Tfidf(train_fp, test_fp, sw_fp):
 
     return train_X, train_Y, test_X, test_Y
 
-def qtype2DictIndex(train_fp, test_fp, sw_fp):
+def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -129,7 +133,9 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp):
 
     del documents
 
-    X = tu.docs2DictIndex(texts)
+    dictionary = tu.buildDict(texts, prune_at=prune_dict)
+
+    X = tu.docs2DictIndex(texts, dictionary)
 
     del texts
 

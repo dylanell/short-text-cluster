@@ -44,7 +44,8 @@ if __name__ == '__main__':
 
     print('converting to log-normalized bag-of-words')
     # convert question type data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp, sw_fp)
+    train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp,
+                                                 sw_fp, prune_dict=5000)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_lnbow.dat', train_X)
@@ -56,7 +57,8 @@ if __name__ == '__main__':
 
     print('converting to tf-idf')
     # convert question type data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp, sw_fp)
+    train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp,
+                                                   sw_fp, prune_dict=5000)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_tfidf.dat', train_X)
@@ -66,7 +68,8 @@ if __name__ == '__main__':
     del test_X
 
 
-    # convert question type data to trained word2Vec embeddings
+    # convert question type data to indexes from a dictionary ---
+    # used for joint training of the word embeddings
     print('converting to dictionary indices')
     train_X, _, test_X, _ = qtype2DictIndex(train_fp, test_fp, sw_fp)
 

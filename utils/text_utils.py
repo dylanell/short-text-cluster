@@ -37,17 +37,20 @@ def filterTok(documents, stoplist, stem=False):
     return texts
 
 # needs tokenized texts returned by filterDocs function
-def buildDict(texts):
+def buildDict(texts, prune_at=5000):
+    # insert a null character so that it takes the zeroith spot of the vocab
+    texts.insert(0, [NULL])
+
     # build dictionary
-    dictionary = gensim.corpora.Dictionary(texts)
+    dictionary = gensim.corpora.Dictionary(texts, prune_at=prune_at)
+
+    texts.remove([NULL])
 
     return dictionary
 
 # needs tokenized texts returned by filterDocs() function
-def docs2Bow(texts):
-    # build dictionary
-    dictionary = gensim.corpora.Dictionary(texts)
-
+# and prebuilt dictionary
+def docs2Bow(texts, dictionary):
     # initialize bag of words array
     n = len(texts)
     d = len(dictionary)
@@ -69,10 +72,8 @@ def docs2Bow(texts):
     return X
 
 # needs tokenized texts returned by filterDocs() funstion
-def docs2Tfidf(texts):
-    # build dictionary
-    dictionary = gensim.corpora.Dictionary(texts)
-
+# and prebuilt dictionary
+def docs2Tfidf(texts, dictionary):
     # initialize bag of words array
     n = len(texts)
     d = len(dictionary)
@@ -88,15 +89,7 @@ def docs2Tfidf(texts):
 
     return X
 
-def docs2DictIndex(texts):
-    # insert a null character so that it takes the zeroith spot of the vocab
-    texts.insert(0, [NULL])
-
-    # build dictionary
-    dictionary = gensim.corpora.Dictionary(texts)
-
-    texts.remove([NULL])
-
+def docs2DictIndex(texts, dictionary):
     reverse_dictionary = dict()
 
     for key, value in dictionary.iteritems():
