@@ -53,6 +53,29 @@ def qtypeSplit(train_fp, test_fp):
 
     return train_X, train_Y, test_X, test_Y
 
+def qtype2Texts(train_fp, test_fp, sw_fp):
+    # split the data into samples and labels
+    train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
+
+    documents = train_D + test_D
+
+    # get stopwords
+    stoplist = []
+    for i, line in enumerate(sw_fp):
+        stoplist.append(line.split()[0])
+
+    X = tu.filterTok(documents, stoplist, stem=False)
+
+    train_X = X[:QTYPE_N_TR]
+    test_X = X[-QTYPE_N_TE:]
+
+    # set fp's back to beginning of file
+    train_fp.seek(0)
+    test_fp.seek(0)
+    sw_fp.seek(0)
+
+    return train_X, train_Y, test_X, test_Y
+
 
 # convert the qtype dataset to log normalized bag of words vectors
 def qtype2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):

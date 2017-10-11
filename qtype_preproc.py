@@ -11,9 +11,11 @@ Date: 09/28/2017
 
 import sys
 import numpy as np
+import pickle
 
 from preprocessing.preprocess import qtype2Bow, qtype2DictIndex, qtype2Tfidf
 from preprocessing.preprocess import qtype2Embed
+from preprocessing.preprocess import qtype2Texts
 
 if __name__ == '__main__':
     # retrieve command line args
@@ -41,6 +43,16 @@ if __name__ == '__main__':
 
     # get the out directory
     out_dir = sys.argv[3]
+
+    print('converting to filtered texts')
+    # convert question type data to bag of words vectors
+    train_X, train_Y, test_X, test_Y = qtype2Texts(train_fp, test_fp, sw_fp)
+
+    # save processed data to the out directory
+    with open(out_dir + 'train_texts.dat', 'w') as fp:
+        pickle.dump(train_X, fp)
+    with open(out_dir + 'test_texts.dat', 'w') as fp:
+        pickle.dump(test_X, fp)
 
     print('converting to log-normalized bag-of-words')
     # convert question type data to bag of words vectors
@@ -87,9 +99,10 @@ if __name__ == '__main__':
     np.savetxt(out_dir + 'train_sentvec.dat', train_X)
     np.savetxt(out_dir + 'test_sentvec.dat', test_X)
 
+
     # save label files
-    np.savetxt(out_dir + 'train_label.dat', train_Y)
-    np.savetxt(out_dir + 'test_label.dat', test_Y)
+    #np.savetxt(out_dir + 'train_label.dat', train_Y)
+    #np.savetxt(out_dir + 'test_label.dat', test_Y)
 
     # close original data files
     train_fp.close()
