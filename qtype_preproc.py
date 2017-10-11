@@ -13,6 +13,7 @@ import sys
 import numpy as np
 
 from preprocessing.preprocess import qtype2Bow, qtype2DictIndex, qtype2Tfidf
+from preprocessing.preprocess import qtype2Embed
 
 if __name__ == '__main__':
     # retrieve command line args
@@ -41,11 +42,10 @@ if __name__ == '__main__':
     # get the out directory
     out_dir = sys.argv[3]
 
-
     print('converting to log-normalized bag-of-words')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp,
-                                                 sw_fp, prune_dict=5000)
+                                                 sw_fp, prune_dict=2000)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_lnbow.dat', train_X)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     print('converting to tf-idf')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp,
-                                                   sw_fp, prune_dict=5000)
+                                                   sw_fp, prune_dict=2000)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_tfidf.dat', train_X)
@@ -67,16 +67,25 @@ if __name__ == '__main__':
     del train_X
     del test_X
 
-
     # convert question type data to indexes from a dictionary ---
     # used for joint training of the word embeddings
     print('converting to dictionary indices')
-    train_X, _, test_X, _ = qtype2DictIndex(train_fp, test_fp, sw_fp)
+    train_X, train_Y, test_X, test_Y = qtype2DictIndex(train_fp, test_fp,
+                                            sw_fp, prune_dict=2000)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_indices.dat', train_X)
     np.savetxt(out_dir + 'test_indices.dat', test_X)
 
+    print('converting to sentence vector')
+    embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
+    train_X, train_Y, test_X, test_Y = qtype2Embed(train_fp, test_fp,
+                                                   sw_fp, embed_dir,
+                                                   vtype='attention')
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_sentvec.dat', train_X)
+    np.savetxt(out_dir + 'test_sentvec.dat', test_X)
 
     # save label files
     np.savetxt(out_dir + 'train_label.dat', train_Y)

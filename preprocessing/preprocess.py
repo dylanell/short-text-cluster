@@ -148,3 +148,37 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     sw_fp.seek(0)
 
     return train_X, train_Y, test_X, test_Y
+
+def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
+    # split the data into samples and labels
+    train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
+
+    documents = train_D + test_D
+
+    # get stopwords
+    stoplist = []
+    for i, line in enumerate(sw_fp):
+        stoplist.append(line.split()[0])
+
+    texts = tu.filterTok(documents, stoplist, stem=False)
+
+    del documents
+
+    if (vtype=='average'):
+        X = tu.docs2AvgEmbed(texts, embed_dir)
+    elif (vtype=='representative'):
+        X = tu.docs2RepEmbed(texts, embed_dir)
+    elif (vtype=='attention'):
+        X = tu.docs2WeightEmbed(texts, embed_dir, temp=1e-2)
+
+    del texts
+
+    train_X = X[:QTYPE_N_TR].astype(np.float32)
+    test_X = X[-QTYPE_N_TE:].astype(np.float32)
+
+    # set fp's back to beginning of file
+    train_fp.seek(0)
+    test_fp.seek(0)
+    sw_fp.seek(0)
+
+    return train_X, train_Y, test_X, test_Y

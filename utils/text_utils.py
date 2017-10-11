@@ -38,11 +38,18 @@ def filterTok(documents, stoplist, stem=False):
 
 # needs tokenized texts returned by filterDocs function
 def buildDict(texts, prune_at=5000):
+    # TODO: keep most frequent words
+    for text in texts:
+        text.append(NULL)
+
     # insert a null character so that it takes the zeroith spot of the vocab
     texts.insert(0, [NULL])
 
     # build dictionary
-    dictionary = gensim.corpora.Dictionary(texts, prune_at=prune_at)
+    dictionary = gensim.corpora.Dictionary(texts)
+
+    dictionary.filter_extremes(no_below=0, no_above=1.0,
+                               keep_n=prune_at, keep_tokens=NULL)
 
     texts.remove([NULL])
 
@@ -56,7 +63,7 @@ def docs2Bow(texts, dictionary):
     d = len(dictionary)
     X = np.zeros((n, d))
 
-    corpus = [dictionary.doc2bow(text) for text in texts]
+    corpus = [dictionary.doc2bow(text, allow_update=False) for text in texts]
 
     for i, vec in enumerate(corpus):
         for idx, val in vec:
@@ -79,7 +86,7 @@ def docs2Tfidf(texts, dictionary):
     d = len(dictionary)
     X = np.zeros((n, d))
 
-    corpus = [dictionary.doc2bow(text) for text in texts]
+    corpus = [dictionary.doc2bow(text, allow_update=False) for text in texts]
 
     tfidf = gensim.models.TfidfModel(corpus)
 
@@ -107,5 +114,104 @@ def docs2DictIndex(texts, dictionary):
                 X[i, j] = reverse_dictionary[word]
             except:
                 X[i, j] = reverse_dictionary[NULL]
+        # fill remaining gaps with NULL character
+        X[i, j:] = reverse_dictionary[NULL]
+
+    return X
+
+# input: list of tokenized texts as lists
+def docs2AvgEmbed(texts, embed_dir):
+    print('average word embedding')
+    n = len(texts)
+    d = 300
+    X = np.zeros((n, d))
+
+    model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
+                                                            binary=True)
+
+    for i, text in enumerate(texts):
+        s = len(text)
+        W = np.zeros((s, d))
+        # get the sentence embedding matrix W
+        for j, word in enumerate(text):
+            try:
+                W[j, :] = model.wv[word]
+            except:
+                W[j, :] = np.random.normal(0, 1, (1, d))
+
+        # calculate the average embedding vector
+        X[i, :] = np.mean(W, axis=0)
+
+    del model
+
+    return X
+
+# input: list of tokenized texts as lists
+def docs2RepEmbed(texts, embed_dir):
+    print('representative embedding')
+    n = len(texts)
+    d = 300
+    X = np.zeros((n, d))
+
+    model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
+                                                            binary=True)
+
+    for i, text in enumerate(texts):
+        s = len(text)
+        W = np.zeros((s, d))
+        # get the sentence embedding matrix W
+        for j, word in enumerate(text):
+            try:
+                W[j, :] = model.wv[word]
+            except:
+                W[j, :] = np.random.normal(0, 1, (1, d))
+
+        from sklearn import metrics
+        pw = metrics.pairwise.pairwise_distances(W)
+
+        rep = np.argmin(np.sum(pw, axis=0))
+
+        # calculate the representative for the embedding
+        X[i, :] = W[rep, :]
+
+    del model
+
+    return X
+
+# input: list of tokenized texts as lists
+def docs2WeightEmbed(texts, embed_dir, temp=1e-3):
+    def softmax(x, t):
+        e_x = np.exp(x/t)
+        return e_x / e_x.sum()
+
+    print('weighted word embedding')
+    n = len(texts)
+    d = 300
+    X = np.zeros((n, d))
+
+    model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
+                                                            binary=True)
+
+    for i, text in enumerate(texts):
+        s = len(text)
+        W = np.zeros((s, d))
+        # get the sentence embedding matrix W
+        for j, word in enumerate(text):
+            try:
+                W[j, :] = model.wv[word]
+            except:
+                W[j, :] = np.random.normal(0, 1, (1, d))
+
+        from sklearn import metrics
+        pw = metrics.pairwise.pairwise_distances(W)
+
+        vec = 1/np.sum(pw, axis=0)
+
+        att = softmax(vec, temp).reshape((vec.shape[0], 1))
+
+        # calculate the attention for the embedding
+        X[i, :] = np.matmul(att.T, W)
+
+    del model
 
     return X
