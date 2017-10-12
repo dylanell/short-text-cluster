@@ -12,31 +12,9 @@ import copy
 
 from scipy import linalg
 
-
-
-def embedPCA(X, l=2, binary=False):
-    # get number of samples 'm' and dimensionality of samples 'n'
-    m = X.shape[0]
-    n = np.prod(X.shape[1:])
-
-    # make X 2D by flattening all axis other than axis 0
-    X = X.reshape((-1, n))
-
-    # center X
-    X = X - np.mean(X, axis=0)
-
-    S = np.matmul(X.T, X)
-
-    lam, v = np.linalg.eigh(S)
-
-    order = np.argsort(lam)[::-1]
-
-    top_l = order[:l]
-
-    evecs = v[:, top_l]
-
-    # project X to new space in R^l
-    Y = np.matmul(X, evecs)
+def embedTSNE(X, l=2, binary=False):
+    from sklearn.manifold import TSNE
+    Y = TSNE(n_components=2).fit_transform(X)
 
     if(binary):
         # get the median of each projected sample
@@ -48,7 +26,19 @@ def embedPCA(X, l=2, binary=False):
 
     return Y
 
+def embedPCA(X, l=2, binary=False):
+    from sklearn.decomposition import PCA
+    Y = PCA(n_components=2).fit_transform(X)
 
+    if(binary):
+        # get the median of each projected sample
+        median = np.median(Y, axis=1).reshape((m, 1))
+
+        # if the element of a sample is greater than its median, it becomes 1,
+        # otherwise it is 0
+        Y = 1*((Y - median) >= 0)
+
+    return Y
 
 # create projections of samples in X using locality-pereserving-constraints
 # (LPP) in R^l
@@ -77,8 +67,7 @@ def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
         PW = metrics.pairwise.pairwise_distances(X, metric='l2')
 
     # find  k nearest for each row
-    not_done = range(m)
-    for i in not_done:
+    for i in range(m):
         order = np.argsort(PW[i, :])
         if (metric=='cosine'):
             k_nearest = order[::-1][1:k+1]

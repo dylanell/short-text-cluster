@@ -215,3 +215,81 @@ def docs2WeightEmbed(texts, embed_dir, temp=1e-3):
     del model
 
     return X
+
+# convert documents (T) to locality-preserving-projections using
+# word-movers-distance as a distance metric and a pretrained sentence to
+# vector dataset (X) as the vector constraints
+def docs2LPP(X, T, embed_dir, k=10, t=1e2, l=2, binary=False):
+    from scipy import linalg
+
+    # get number of samples 'm'
+    m = X.shape[0]
+    n = X.shape[1]
+
+    Y = np.zeros((m, l))
+    N = np.zeros((m, m))
+
+    # center X
+    X = X - np.mean(X, axis=0)
+
+    # open the google word2vec model
+    model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
+                                                            binary=True)
+
+    PW = np.zeros((m, m))
+    # construct pairwise distance matrix from word movers distance
+    for i in range(m):
+        for j in range(m):
+            PW[i, j] = model.wmdistance(T[i], T[j])
+
+    del model
+
+    # find  k nearest for each row
+    for i in range(m):
+        order = np.argsort(PW[i, :])
+
+        k_nearest = order[1:k+1]
+
+        # get neighbors
+        N[i, k_nearest] = 1
+
+    # N = 1 if i is j's neighbor or j is i's neighbor
+    N = 1 * ((N.T + N) > 0)
+
+    W = np.exp(-1 * (PW**2) / t) * N
+
+    # create a diagonal matrix from the weights
+    D = np.diag(np.sum(W, axis=0))
+
+    # create a laplacian matrix
+    L = D - W
+
+    # solve the generalized eigenvalue equation X^TLXa = lam * X^TDXa
+    # where N = X^TDX and M = X^TLX and E = N^-1M so we have
+    # Ea = lam*a ----> get eigenvalues of E
+    N = np.matmul(X.T, np.matmul(D, X))
+
+    M = np.matmul(X.T, np.matmul(L, X))
+
+    # generalized eigenval equation now: Ma = lam * Na
+
+    lam, v = linalg.eigh(M, b=N)
+
+    order = np.argsort(lam)
+
+    bot_l = order[:l]
+
+    evecs = v[:, bot_l]
+
+    # project X to new space in R^l
+    Y = np.matmul(X, evecs)
+
+    if(binary):
+        # get the median of each projected sample
+        median = np.median(Y, axis=1).reshape((m, 1))
+
+        # if the element of a sample is greater than its median, it becomes 1,
+        # otherwise it is 0
+        Y = 1*((Y - median) >= 0)
+
+    return Y

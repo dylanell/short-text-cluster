@@ -192,7 +192,7 @@ def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
     elif (vtype=='representative'):
         X = tu.docs2RepEmbed(texts, embed_dir)
     elif (vtype=='attention'):
-        X = tu.docs2WeightEmbed(texts, embed_dir, temp=1e-2)
+        X = tu.docs2WeightEmbed(texts, embed_dir)
 
     del texts
 
