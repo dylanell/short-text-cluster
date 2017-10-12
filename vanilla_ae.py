@@ -22,11 +22,14 @@ if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 3):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./vanilla_ae.py <train_x_fp> <out_dir>')
+        print('[USAGE] ./vanilla_ae.py <train_x_fp> <num_hidden> <out_dir>')
         sys.exit()
 
     # get the training data
     X = np.loadtxt(sys.argv[1])
+
+    # center X
+    X = X - np.mean(X, axis=0)
 
     n, d = X.shape
 
@@ -34,14 +37,14 @@ if __name__ == '__main__':
     E = []
 
     """ hyper parameters """
-    eta = 1e-2
-    latent_dim = 100
+    eta = 1e-3
+    latent_dim = int(sys.argv[2])
 
     alpha = 6.26
     ktop = latent_dim//4
 
     """ runtime parameters """
-    num_iter = 100
+    num_iter = 1000
     plot_per = 1
     batch_size = 128
     plot = 1
@@ -62,14 +65,16 @@ if __name__ == '__main__':
     decoder = MultiLayerPerceptron([latent_dim, d],
                                    encoder.predict,
                                    scope='mlp_decoder',
-                                   out_type='logits')
+                                   out_type='tanh')
 
     outputs = decoder.predict
 
-    loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels=targets,
-        logits=outputs
-    )
+    #loss = tf.nn.sigmoid_cross_entropy_with_logits(
+    #    labels=targets,
+    #    logits=outputs
+    #)
+
+    loss = tf.norm(tf.subtract(outputs, targets), ord=2)
 
     error = tf.reduce_mean(loss)
 

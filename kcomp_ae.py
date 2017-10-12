@@ -22,11 +22,14 @@ if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 3):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./kcomp_ae.py <train_x_fp> <out_dir>')
+        print('[USAGE] ./kcomp_ae.py <train_x_fp> <num_hidden> <out_dir>')
         sys.exit()
 
     # get the training data
     X = np.loadtxt(sys.argv[1])
+
+    # center X
+    X = X - np.mean(X, axis=0)
 
     n, d = X.shape
 
@@ -34,14 +37,14 @@ if __name__ == '__main__':
     E = []
 
     """ hyper parameters """
-    eta = 1e-2
-    latent_dim = 100
+    eta = 5e-4
+    latent_dim = int(sys.argv[2])
 
     alpha = 6.26
     ktop = latent_dim//4
 
     """ runtime parameters """
-    num_iter = 100
+    num_iter = 1000
     plot_per = 1
     batch_size = 128
     plot = 1
@@ -57,25 +60,29 @@ if __name__ == '__main__':
                                    scope='mlp_encoder',
                                    out_type='tanh')
 
-    #competitive = KCompetitiveLayer(encoder.predict, ktop, alpha)
+    competitive = KCompetitiveLayer(encoder.predict, ktop, alpha)
 
     decoder = MultiLayerPerceptron([latent_dim, d],
-                                   encoder.predict,
+                                   competitive,
                                    scope='mlp_decoder',
                                    out_type='logits')
 
     outputs = decoder.predict
 
-    loss = tf.nn.sigmoid_cross_entropy_with_logits(
-        labels=targets,
-        logits=outputs
-    )
+    #loss = tf.nn.sigmoid_cross_entropy_with_logits(
+    #    labels=targets,
+    #    logits=outputs
+    #)
+
+    loss = tf.norm(tf.subtract(outputs, targets), ord=2)
 
     error = tf.reduce_mean(loss)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(error)
 
     init = tf.global_variables_initializer()
+
+    O = np.zeros((n, latent_dim))
 
     """ Tensorflow Session """
     with tf.Session() as sess:
@@ -101,6 +108,15 @@ if __name__ == '__main__':
 
         sys.stdout.write('\rTraining: 100%\n\n')
         sys.stdout.flush()
+
+        for i in range(n):
+            test_feed = {inputs: X[None, i, :], targets: X[None, i, :]}
+
+            out = sess.run(encoder.predict, test_feed)
+
+            O[i, :] = out
+
+        np.savetxt('train_aelatent.dat', O)
 
         sess.close()
 
