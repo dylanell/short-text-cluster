@@ -21,9 +21,9 @@ if __name__ == '__main__':
 
     #Y = du.embedPCA(X, l=2, binary=False)
 
-    Y = du.embedTSNE(X, l=2, binary=False)
+    #Y = du.embedTSNE(X, l=2, binary=False)
 
-    #Y = du.embedLPP(X, k=10, t=1e1, l=2, metric='l2', binary=False)
+    Y = du.embedLPP(X, k=10, t=1e1, l=2, metric='l2', binary=False)
 
     #Y = tu.docs2LPP(X, T, embed_dir, k=10, t=1e0, l=2, binary=False)
 

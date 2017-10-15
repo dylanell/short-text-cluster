@@ -101,8 +101,8 @@ if __name__ == '__main__':
 
 
     # save label files
-    #np.savetxt(out_dir + 'train_label.dat', train_Y)
-    #np.savetxt(out_dir + 'test_label.dat', test_Y)
+    np.savetxt(out_dir + 'train_label.dat', train_Y)
+    np.savetxt(out_dir + 'test_label.dat', test_Y)
 
     # close original data files
     train_fp.close()
