@@ -179,7 +179,7 @@ def docs2RepEmbed(texts, embed_dir):
     return X
 
 # input: list of tokenized texts as lists
-def docs2WeightEmbed(texts, embed_dir, temp=1e-3):
+def docs2WeightEmbed(texts, embed_dir, temp=5e-3):
     def softmax(x, t):
         e_x = np.exp(x/t)
         return e_x / e_x.sum()
@@ -205,7 +205,7 @@ def docs2WeightEmbed(texts, embed_dir, temp=1e-3):
         from sklearn import metrics
         pw = metrics.pairwise.pairwise_distances(W)
 
-        vec = 1/np.sum(pw, axis=0)
+        vec = 1/(1 + np.sum(pw, axis=0))
 
         att = softmax(vec, temp).reshape((vec.shape[0], 1))
 
