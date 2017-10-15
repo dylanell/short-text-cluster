@@ -15,8 +15,8 @@ import pickle
 
 from preprocessing.preprocess import stk2Texts
 from preprocessing.preprocess import stk2Bow
+from preprocessing.preprocess import stk2Tfidf
 #from preprocessing.preprocess import stk2DictIndex
-#from preprocessing.preprocess import stk2Tfidf
 #from preprocessing.preprocess import stk2Embed
 
 if __name__ == '__main__':
@@ -76,6 +76,19 @@ if __name__ == '__main__':
 
     del train_X
     del test_X
+
+    print('converting to tf-idf')
+    # convert question type data to bag of words vectors
+    train_X, train_Y, test_X, test_Y = stk2Tfidf(sample_fp, label_fp,
+                                                   sw_fp, prune_dict=vocab_size)
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_tfidf.dat', train_X)
+    np.savetxt(out_dir + 'test_tfidf.dat', test_X)
+
+    del train_X
+    del test_X
+
 
 
 

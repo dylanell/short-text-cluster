@@ -286,6 +286,7 @@ def stk2Texts(sample_fp, label_fp, sw_fp):
 
     return train_X, train_Y, test_X, test_Y
 
+# convert the stackoverflow dataset to log-normalized bag of words vectors
 def stk2Bow(sample_fp, label_fp, sw_fp, prune_dict=5000):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
@@ -318,7 +319,37 @@ def stk2Bow(sample_fp, label_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y
 
 
+# convert the stackoverflow dataset to tf-idf vectors
+def stk2Tfidf(sample_fp, label_fp, sw_fp, prune_dict=5000):
+    # split the data into samples and labels
+    train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
 
+    documents = train_D + test_D
+
+    # get stopwords
+    stoplist = []
+    for i, line in enumerate(sw_fp):
+        stoplist.append(line.split()[0])
+
+    texts = tu.filterTok(documents, stoplist, stem=False)
+
+    del documents
+
+    dictionary = tu.buildDict(texts, prune_at=prune_dict)
+
+    X = tu.docs2Tfidf(texts, dictionary)
+
+    del texts
+
+    train_X = X[:STK_N_TR]
+    test_X = X[-STK_N_TE:]
+
+    # set fp's back to beginning of file
+    sample_fp.seek(0)
+    label_fp.seek(0)
+    sw_fp.seek(0)
+
+    return train_X, train_Y, test_X, test_Y
 
 
 
