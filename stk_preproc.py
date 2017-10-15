@@ -16,8 +16,8 @@ import pickle
 from preprocessing.preprocess import stk2Texts
 from preprocessing.preprocess import stk2Bow
 from preprocessing.preprocess import stk2Tfidf
-#from preprocessing.preprocess import stk2DictIndex
-#from preprocessing.preprocess import stk2Embed
+from preprocessing.preprocess import stk2DictIndex
+from preprocessing.preprocess import stk2Embed
 
 if __name__ == '__main__':
     # retrieve command line args
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     del test_X
 
     print('converting to log-normalized bag-of-words')
-    # convert question type data to bag of words vectors
+    # convert stackoverflow data to bag of words vectors
     train_X, train_Y, test_X, test_Y = stk2Bow(sample_fp, label_fp,
                                                  sw_fp, prune_dict=vocab_size)
 
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     del test_X
 
     print('converting to tf-idf')
-    # convert question type data to bag of words vectors
+    # convert stackoverflow data to bag of words vectors
     train_X, train_Y, test_X, test_Y = stk2Tfidf(sample_fp, label_fp,
                                                    sw_fp, prune_dict=vocab_size)
 
@@ -88,6 +88,39 @@ if __name__ == '__main__':
 
     del train_X
     del test_X
+
+    # convert stackoverflow data to indexes from a dictionary
+    # used for joint training of the word embeddings
+    print('converting to dictionary indices')
+    train_X, train_Y, test_X, test_Y = stk2DictIndex(sample_fp, label_fp,
+                                            sw_fp, prune_dict=vocab_size)
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_indices.dat', train_X)
+    np.savetxt(out_dir + 'test_indices.dat', test_X)
+
+    print('converting to sentence vector')
+    embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
+    train_X, train_Y, test_X, test_Y = stk2Embed(sample_fp, label_fp,
+                                                   sw_fp, embed_dir,
+                                                   vtype='attention')
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_sentvec.dat', train_X)
+    np.savetxt(out_dir + 'test_sentvec.dat', test_X)
+
+
+    # save label files
+    np.savetxt(out_dir + 'train_label.dat', train_Y)
+    np.savetxt(out_dir + 'test_label.dat', test_Y)
+
+    # close original data files
+    sample_fp.close()
+    label_fp.close()
+
+    # close the stopwords file
+    sw_fp.close()
+
 
 
 

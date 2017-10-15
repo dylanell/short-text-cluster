@@ -91,7 +91,7 @@ if __name__ == '__main__':
     del train_X
     del test_X
 
-    # convert question type data to indexes from a dictionary ---
+    # convert question type data to indexes from a dictionary
     # used for joint training of the word embeddings
     print('converting to dictionary indices')
     train_X, train_Y, test_X, test_Y = qtype2DictIndex(train_fp, test_fp,
