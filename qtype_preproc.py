@@ -13,16 +13,18 @@ import sys
 import numpy as np
 import pickle
 
-from preprocessing.preprocess import qtype2Bow, qtype2DictIndex, qtype2Tfidf
+from preprocessing.preprocess import qtype2Bow
+from preprocessing.preprocess import qtype2DictIndex
+from preprocessing.preprocess import qtype2Tfidf
 from preprocessing.preprocess import qtype2Embed
 from preprocessing.preprocess import qtype2Texts
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 4):
+    if (len(sys.argv) < 5):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./process_qtype.py <train_src> <test_src> ' \
-              '<out_dir>')
+              '<out_dir> <vocab_size>')
         sys.exit()
 
     # open the datafiles
@@ -44,20 +46,30 @@ if __name__ == '__main__':
     # get the out directory
     out_dir = sys.argv[3]
 
+    # get the vocabulary (dictionary) size
+    vocab_size = int(sys.argv[4])
+
+
     print('converting to filtered texts')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Texts(train_fp, test_fp, sw_fp)
 
     # save processed data to the out directory
-    with open(out_dir + 'train_texts.dat', 'w') as fp:
-        pickle.dump(train_X, fp)
-    with open(out_dir + 'test_texts.dat', 'w') as fp:
-        pickle.dump(test_X, fp)
+    try:
+        with open(out_dir + 'train_texts.dat', 'w') as fp:
+            pickle.dump(train_X, fp)
+        with open(out_dir + 'test_texts.dat', 'w') as fp:
+            pickle.dump(test_X, fp)
+    except Exception as e:
+        raise e
+
+    del train_X
+    del test_X
 
     print('converting to log-normalized bag-of-words')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp,
-                                                 sw_fp, prune_dict=2000)
+                                                 sw_fp, prune_dict=vocab_size)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_lnbow.dat', train_X)
@@ -70,7 +82,7 @@ if __name__ == '__main__':
     print('converting to tf-idf')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp,
-                                                   sw_fp, prune_dict=2000)
+                                                   sw_fp, prune_dict=vocab_size)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_tfidf.dat', train_X)
@@ -83,7 +95,7 @@ if __name__ == '__main__':
     # used for joint training of the word embeddings
     print('converting to dictionary indices')
     train_X, train_Y, test_X, test_Y = qtype2DictIndex(train_fp, test_fp,
-                                            sw_fp, prune_dict=2000)
+                                            sw_fp, prune_dict=vocab_size)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_indices.dat', train_X)
