@@ -13,11 +13,11 @@ import sys
 import numpy as np
 import pickle
 
-from preprocessing.preprocess import qtype2Bow
-from preprocessing.preprocess import qtype2DictIndex
-from preprocessing.preprocess import qtype2Tfidf
-from preprocessing.preprocess import qtype2Embed
-from preprocessing.preprocess import qtype2Texts
+from preprocessing.preprocess import agnews2Texts
+from preprocessing.preprocess import agnews2Bow
+from preprocessing.preprocess import agnews2Tfidf
+from preprocessing.preprocess import agnews2DictIndex
+from preprocessing.preprocess import agnews2Embed
 
 if __name__ == '__main__':
     # retrieve command line args
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     print('converting to filtered texts')
     # convert question type data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = qtype2Texts(train_fp, test_fp, sw_fp)
+    train_X, train_Y, test_X, test_Y = agnews2Texts(train_fp, test_fp, sw_fp)
 
     # save processed data to the out directory
     try:
@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     print('converting to log-normalized bag-of-words')
     # convert question type data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp,
+    train_X, train_Y, test_X, test_Y = agnews2Bow(train_fp, test_fp,
                                                  sw_fp, prune_dict=vocab_size)
 
     # save processed data to the out directory
@@ -78,10 +78,9 @@ if __name__ == '__main__':
     del train_X
     del test_X
 
-
     print('converting to tf-idf')
     # convert question type data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp,
+    train_X, train_Y, test_X, test_Y = agnews2Tfidf(train_fp, test_fp,
                                                    sw_fp, prune_dict=vocab_size)
 
     # save processed data to the out directory
@@ -94,7 +93,7 @@ if __name__ == '__main__':
     # convert question type data to indexes from a dictionary
     # used for joint training of the word embeddings
     print('converting to dictionary indices')
-    train_X, train_Y, test_X, test_Y = qtype2DictIndex(train_fp, test_fp,
+    train_X, train_Y, test_X, test_Y = agnews2DictIndex(train_fp, test_fp,
                                             sw_fp, prune_dict=vocab_size)
 
     # save processed data to the out directory
@@ -106,7 +105,7 @@ if __name__ == '__main__':
 
     print('converting to sentence vector')
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
-    train_X, train_Y, test_X, test_Y = qtype2Embed(train_fp, test_fp,
+    train_X, train_Y, test_X, test_Y = agnews2Embed(train_fp, test_fp,
                                                    sw_fp, embed_dir,
                                                    vtype='attention')
 

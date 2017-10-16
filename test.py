@@ -17,15 +17,21 @@ if __name__ == '__main__':
 
     with open('datasets/q-type/train_texts.dat', 'r') as fp:
         T = pickle.load(fp)
-    """
-
-
 
     X = np.loadtxt('datasets/stk-ovflw/train_sentvec.dat', delimiter=' ')
     L = np.loadtxt('datasets/stk-ovflw/train_label.dat',
                     delimiter=' ').astype(np.int32)
 
     with open('datasets/stk-ovflw/train_texts.dat', 'r') as fp:
+        T = pickle.load(fp)
+
+    """
+
+    X = np.loadtxt('datasets/ag-news/train_sentvec.dat', delimiter=' ')
+    L = np.loadtxt('datasets/ag-news/train_label.dat',
+                    delimiter=' ').astype(np.int32)
+
+    with open('datasets/ag-news/train_texts.dat', 'r') as fp:
         T = pickle.load(fp)
 
 
