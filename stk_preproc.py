@@ -99,10 +99,13 @@ if __name__ == '__main__':
     np.savetxt(out_dir + 'train_indices.dat', train_X)
     np.savetxt(out_dir + 'test_indices.dat', test_X)
 
+    del train_X
+    del test_X
+
     print('converting to sentence vector')
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
     train_X, train_Y, test_X, test_Y = stk2Embed(sample_fp, label_fp,
-                                                   sw_fp, embed_dir,
+                                                   sw_fp, embed_dir=None,
                                                    vtype='attention')
 
     # save processed data to the out directory

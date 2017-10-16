@@ -202,6 +202,8 @@ def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
         X = tu.docs2RepEmbed(texts, embed_dir)
     elif (vtype=='attention'):
         X = tu.docs2WeightEmbed(texts, embed_dir)
+    elif (vtype=='gensim'):
+        X = tu.docs2Vector(texts)
 
     del texts
 
@@ -405,6 +407,8 @@ def stk2Embed(sample_fp, label_fp, sw_fp, embed_dir, vtype='average'):
         X = tu.docs2RepEmbed(texts, embed_dir)
     elif (vtype=='attention'):
         X = tu.docs2WeightEmbed(texts, embed_dir)
+    elif (vtype=='gensim'):
+        X = tu.docs2Vector(texts)
 
     del texts
 

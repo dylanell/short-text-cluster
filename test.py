@@ -10,14 +10,31 @@ import pickle
 if __name__ == '__main__':
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
 
+    """
     X = np.loadtxt('datasets/q-type/train_sentvec.dat', delimiter=' ')
     L = np.loadtxt('datasets/q-type/train_label.dat',
                     delimiter=' ').astype(np.int32)
 
     with open('datasets/q-type/train_texts.dat', 'r') as fp:
         T = pickle.load(fp)
+    """
+
+
+
+    X = np.loadtxt('datasets/stk-ovflw/train_sentvec.dat', delimiter=' ')
+    L = np.loadtxt('datasets/stk-ovflw/train_label.dat',
+                    delimiter=' ').astype(np.int32)
+
+    with open('datasets/stk-ovflw/train_texts.dat', 'r') as fp:
+        T = pickle.load(fp)
+
+
+
 
     num_samples = X.shape[0]
+    batch_size = num_samples//10
+
+    X, L, _ = du.getBatch(X, L, batch_size)
 
     #Y = du.embedPCA(X, l=2, binary=False)
 
@@ -30,6 +47,9 @@ if __name__ == '__main__':
     colors = ['r', 'g', 'b', 'y', 'k', 'c']
 
     plt.figure(0)
-    for i in range(num_samples):
-        plt.scatter(Y[i, 0], Y[i, 1], color=colors[L[i]], s=3)
+    for i in range(batch_size):
+        try:
+            plt.scatter(Y[i, 0], Y[i, 1], color=colors[L[i]], s=3)
+        except:
+            plt.scatter(Y[i, 0], Y[i, 1], s=3)
     plt.show()

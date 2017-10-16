@@ -9,6 +9,7 @@ Date: 09/07/2017
 """
 import numpy as np
 import gensim
+from collections import namedtuple
 import logging
 import time
 
@@ -179,7 +180,7 @@ def docs2RepEmbed(texts, embed_dir):
     return X
 
 # input: list of tokenized texts as lists
-def docs2WeightEmbed(texts, embed_dir, temp=5e-3):
+def docs2WeightEmbed(texts, embed_dir=None, temp=1e-2):
     def softmax(x, t):
         e_x = np.exp(x/t)
         return e_x / e_x.sum()
@@ -189,8 +190,12 @@ def docs2WeightEmbed(texts, embed_dir, temp=5e-3):
     d = 300
     X = np.zeros((n, d))
 
-    model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
-                                                            binary=True)
+    if (embed_dir):
+        model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
+                                                                binary=True)
+    else:
+        model = gensim.models.Word2Vec(texts, size=300, min_count=0)
+        model.train(texts, total_examples=model.corpus_count, epochs=20)
 
     for i, text in enumerate(texts):
         s = len(text)
@@ -205,12 +210,43 @@ def docs2WeightEmbed(texts, embed_dir, temp=5e-3):
         from sklearn import metrics
         pw = metrics.pairwise.pairwise_distances(W)
 
+        # normalize pw if its not 0
+        if (np.linalg.norm(pw)):
+            pw = pw/np.linalg.norm(pw)
+
         vec = 1/(1 + np.sum(pw, axis=0))
 
         att = softmax(vec, temp).reshape((vec.shape[0], 1))
 
         # calculate the attention for the embedding
         X[i, :] = np.matmul(att.T, W)
+
+    del model
+
+    return X
+
+# input: list of tokenized texts as lists
+def docs2Vector(texts):
+    from gensim.models.doc2vec import LabeledSentence
+
+    print('gensim doc2vec embedding')
+    n = len(texts)
+    d = 300
+    X = np.zeros((n, d))
+
+    # we need to create a corpus of tagged documents for the doc2vec model
+    docs = []
+    for i, text in enumerate(texts):
+        tag = [str(i)]
+        docs.append(LabeledSentence(text, tag))
+
+    model = gensim.models.Doc2Vec(docs, size=300, min_count=0)
+    model.train(docs, total_examples=model.corpus_count, epochs=20)
+
+    # infer all doc vectors and save to array
+    for i, text in enumerate(texts):
+        # get the doc2vec embedding fro this sentence
+        X[i, :] = model.infer_vector(text)
 
     del model
 
