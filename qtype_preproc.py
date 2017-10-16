@@ -13,18 +13,19 @@ import sys
 import numpy as np
 import pickle
 
-from preprocessing.preprocess import qtype2Bow
-from preprocessing.preprocess import qtype2DictIndex
-from preprocessing.preprocess import qtype2Tfidf
-from preprocessing.preprocess import qtype2Embed
 from preprocessing.preprocess import qtype2Texts
+from preprocessing.preprocess import qtype2Bow
+from preprocessing.preprocess import qtype2Tfidf
+from preprocessing.preprocess import qtype2DictIndex
+from preprocessing.preprocess import qtype2Embed
+from preprocessing.preprocess import qtype2LPP
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 5):
+    if (len(sys.argv) < 4):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./process_qtype.py <train_src> <test_src> ' \
-              '<out_dir> <vocab_size>')
+              '<out_dir>')
         sys.exit()
 
     # open the datafiles
@@ -47,8 +48,9 @@ if __name__ == '__main__':
     out_dir = sys.argv[3]
 
     # get the vocabulary (dictionary) size
-    vocab_size = int(sys.argv[4])
+    vocab_size = 2000
 
+    embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
 
     print('converting to filtered texts')
     # convert question type data to bag of words vectors
@@ -105,7 +107,6 @@ if __name__ == '__main__':
     del test_X
 
     print('converting to sentence vector')
-    embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
     train_X, train_Y, test_X, test_Y = qtype2Embed(train_fp, test_fp,
                                                    sw_fp, embed_dir,
                                                    vtype='attention')
@@ -113,6 +114,9 @@ if __name__ == '__main__':
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_sentvec.dat', train_X)
     np.savetxt(out_dir + 'test_sentvec.dat', test_X)
+
+    del train_X
+    del test_X
 
     # save label files
     np.savetxt(out_dir + 'train_label.dat', train_Y)
@@ -124,3 +128,22 @@ if __name__ == '__main__':
 
     # close the stopwords file
     sw_fp.close()
+
+    print('converting to LPP')
+    train_X_fn = out_dir + 'train_sentvec.dat'
+    train_L_fn = out_dir + 'train_label.dat'
+    train_T_fn = out_dir + 'train_texts.dat'
+    test_X_fn = out_dir + 'test_sentvec.dat'
+    test_L_fn = out_dir + 'test_label.dat'
+    test_T_fn = out_dir + 'test_texts.dat'
+    train_X, train_Y, test_X, test_Y = qtype2LPP(train_X_fn, train_L_fn,
+                                                 train_T_fn, test_X_fn,
+                                                 test_L_fn, test_T_fn,
+                                                 embed_dir=embed_dir,
+                                                 k=10, t=1e0, l=50,
+                                                 binary=True, batch_size=5000,
+                                                 metric='l2')
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_lpp.dat', train_X)
+    np.savetxt(out_dir + 'test_lpp.dat', test_X)

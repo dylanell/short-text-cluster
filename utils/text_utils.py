@@ -11,7 +11,10 @@ import numpy as np
 import gensim
 from collections import namedtuple
 import logging
-import time
+import sys
+import copy
+
+import data_utils as du
 
 NULL = '__'
 
@@ -122,7 +125,6 @@ def docs2DictIndex(texts, dictionary):
 
 # input: list of tokenized texts as lists
 def docs2AvgEmbed(texts, embed_dir):
-    print('average word embedding')
     n = len(texts)
     d = 300
     X = np.zeros((n, d))
@@ -149,7 +151,6 @@ def docs2AvgEmbed(texts, embed_dir):
 
 # input: list of tokenized texts as lists
 def docs2RepEmbed(texts, embed_dir):
-    print('representative embedding')
     n = len(texts)
     d = 300
     X = np.zeros((n, d))
@@ -185,15 +186,16 @@ def docs2WeightEmbed(texts, embed_dir=None, temp=1e-2):
         e_x = np.exp(x/t)
         return e_x / e_x.sum()
 
-    print('weighted word embedding')
     n = len(texts)
     d = 300
     X = np.zeros((n, d))
 
     if (embed_dir):
+        print('\t>> using google vecs')
         model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
                                                                 binary=True)
     else:
+        print('\t>> using custom vecs')
         model = gensim.models.Word2Vec(texts, size=300, min_count=0)
         model.train(texts, total_examples=model.corpus_count, epochs=20)
 
@@ -229,7 +231,6 @@ def docs2WeightEmbed(texts, embed_dir=None, temp=1e-2):
 def docs2Vector(texts):
     from gensim.models.doc2vec import LabeledSentence
 
-    print('gensim doc2vec embedding')
     n = len(texts)
     d = 300
     X = np.zeros((n, d))
@@ -255,30 +256,49 @@ def docs2Vector(texts):
 # convert documents (T) to locality-preserving-projections using
 # word-movers-distance as a distance metric and a pretrained sentence to
 # vector dataset (X) as the vector constraints
-def docs2LPP(X, T, embed_dir, k=10, t=1e2, l=2, binary=False):
+def docs2LPP(X, texts, embed_dir=None, k=10,
+             t=1e0, l=2, binary=False, batch_size=1000):
     from scipy import linalg
 
-    # get number of samples 'm'
-    m = X.shape[0]
-    n = X.shape[1]
-
-    Y = np.zeros((m, l))
-    N = np.zeros((m, m))
+    if (embed_dir):
+        print('\t>> using google vecs')
+        model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
+                                                                binary=True)
+    else:
+        print('\t>> using custom vecs')
+        model = gensim.models.Word2Vec(texts, size=300, min_count=0)
+        model.train(texts, total_examples=model.corpus_count, epochs=20)
 
     # center X
     X = X - np.mean(X, axis=0)
 
-    # open the google word2vec model
-    model = gensim.models.KeyedVectors.load_word2vec_format(embed_dir,
-                                                            binary=True)
+    batch_X, _, _ = du.getBatch(X, X, batch_size)
+
+    # get number of samples 'm'
+    m = batch_X.shape[0]
+    n = batch_X.shape[1]
+
+    Y = np.zeros((m, l))
+    Ne = np.zeros((m, m))
 
     PW = np.zeros((m, m))
     # construct pairwise distance matrix from word movers distance
     for i in range(m):
         for j in range(m):
-            PW[i, j] = model.wmdistance(T[i], T[j])
+            PW[i, j] = model.wmdistance(texts[i], texts[j])
 
+        # report conversion progress
+        progress = format(float(i)/float(m)*100.0, '.2f')
+        sys.stdout.write('\r\t>> LPP progress: ' + str(progress) + '%')
+        sys.stdout.flush()
+
+    sys.stdout.write('\r\t>> LPP progress: 100%\n\n')
+    sys.stdout.flush()
     del model
+
+    # normalize pw if its not 0
+    if (np.linalg.norm(PW)):
+        PW = PW/np.linalg.norm(PW)
 
     # find  k nearest for each row
     for i in range(m):
@@ -287,12 +307,12 @@ def docs2LPP(X, T, embed_dir, k=10, t=1e2, l=2, binary=False):
         k_nearest = order[1:k+1]
 
         # get neighbors
-        N[i, k_nearest] = 1
+        Ne[i, k_nearest] = 1
 
-    # N = 1 if i is j's neighbor or j is i's neighbor
-    N = 1 * ((N.T + N) > 0)
+    # Ne = 1 if i is j's neighbor or j is i's neighbor
+    Ne = 1 * ((Ne.T + Ne) > 0)
 
-    W = np.exp(-1 * (PW**2) / t) * N
+    W = np.exp(-1 * PW / t) * Ne
 
     # create a diagonal matrix from the weights
     D = np.diag(np.sum(W, axis=0))
@@ -303,12 +323,11 @@ def docs2LPP(X, T, embed_dir, k=10, t=1e2, l=2, binary=False):
     # solve the generalized eigenvalue equation X^TLXa = lam * X^TDXa
     # where N = X^TDX and M = X^TLX and E = N^-1M so we have
     # Ea = lam*a ----> get eigenvalues of E
-    N = np.matmul(X.T, np.matmul(D, X))
+    N = np.matmul(batch_X.T, np.matmul(D, batch_X))
 
-    M = np.matmul(X.T, np.matmul(L, X))
+    M = np.matmul(batch_X.T, np.matmul(L, batch_X))
 
     # generalized eigenval equation now: Ma = lam * Na
-
     lam, v = linalg.eigh(M, b=N)
 
     order = np.argsort(lam)
@@ -317,12 +336,12 @@ def docs2LPP(X, T, embed_dir, k=10, t=1e2, l=2, binary=False):
 
     evecs = v[:, bot_l]
 
-    # project X to new space in R^l
+    # project orig_X to new space in R^l
     Y = np.matmul(X, evecs)
 
     if(binary):
         # get the median of each projected sample
-        median = np.median(Y, axis=1).reshape((m, 1))
+        median = np.median(Y, axis=1).reshape((Y.shape[0], 1))
 
         # if the element of a sample is greater than its median, it becomes 1,
         # otherwise it is 0

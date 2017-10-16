@@ -11,8 +11,10 @@ Date: 09/28/2017
 
 import numpy as np
 import time
+import pickle
 
 from utils import text_utils as tu
+from utils import data_utils as du
 
 # q-type dataset params
 qtype_label_d = {'ABBR': 0, 'ENTY': 1, 'DESC': 2, 'HUM': 3, 'LOC': 4, 'NUM': 5}
@@ -286,8 +288,8 @@ def stk2Texts(sample_fp, label_fp, sw_fp):
 
     X = tu.filterTok(documents, stoplist, stem=False)
 
-    train_X = X[:QTYPE_N_TR]
-    test_X = X[-QTYPE_N_TE:]
+    train_X = X[:STK_N_TR]
+    test_X = X[-STK_N_TE:]
 
     # set fp's back to beginning of file
     sample_fp.seek(0)
@@ -637,6 +639,100 @@ def agnews2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
     return train_X, train_Y, test_X, test_Y
 
 
+def qtype2LPP(train_X_fn, train_Y_fn, train_T_fn, test_X_fn,
+              test_Y_fn, test_T_fn, embed_dir=None, k=10, t=1e0, l=2,
+              binary=False, batch_size=1000, metric='l2'):
+
+    train_X = np.loadtxt(train_X_fn, delimiter=' ')
+    train_Y = np.loadtxt(train_Y_fn, delimiter=' ').astype(np.int32)
+
+    with open(train_T_fn, 'r') as fp:
+        train_T = pickle.load(fp)
+
+    test_X = np.loadtxt(test_X_fn, delimiter=' ')
+    test_Y = np.loadtxt(test_Y_fn, delimiter=' ').astype(np.int32)
+
+    with open(test_T_fn, 'r') as fp:
+        test_T = pickle.load(fp)
+
+    X = np.concatenate([train_X, test_X], axis=0)
+    texts = train_T + test_T
+
+    if (metric=='wmd'):
+        X_lpp = tu.docs2LPP(X, texts, embed_dir=embed_dir, k=k, t=t, l=l,
+                            binary=binary, batch_size=batch_size)
+    else:
+        X_lpp = du.embedLPP(X, k=k, t=t, l=l, metric=metric,
+                            binary=binary, batch_size=batch_size)
+
+    train_X = X_lpp[:QTYPE_N_TR].astype(np.float32)
+    test_X = X_lpp[-QTYPE_N_TE:].astype(np.float32)
+
+    return train_X, train_Y, test_X, test_Y
+
+
+def stk2LPP(train_X_fn, train_Y_fn, train_T_fn, test_X_fn,
+              test_Y_fn, test_T_fn, embed_dir=None, k=10, t=1e0, l=2,
+              binary=False, batch_size=1000, metric='l2'):
+
+    train_X = np.loadtxt(train_X_fn, delimiter=' ')
+    train_Y = np.loadtxt(train_Y_fn, delimiter=' ').astype(np.int32)
+
+    with open(train_T_fn, 'r') as fp:
+        train_T = pickle.load(fp)
+
+    test_X = np.loadtxt(test_X_fn, delimiter=' ')
+    test_Y = np.loadtxt(test_Y_fn, delimiter=' ').astype(np.int32)
+
+    with open(test_T_fn, 'r') as fp:
+        test_T = pickle.load(fp)
+
+    X = np.concatenate([train_X, test_X], axis=0)
+    texts = train_T + test_T
+
+    if (metric=='wmd'):
+        X_lpp = tu.docs2LPP(X, texts, embed_dir=embed_dir, k=k, t=t, l=l,
+                            binary=binary, batch_size=batch_size)
+    else:
+        X_lpp = du.embedLPP(X, k=k, t=t, l=l, metric=metric,
+                            binary=binary, batch_size=batch_size)
+
+    train_X = X_lpp[:STK_N_TR].astype(np.float32)
+    test_X = X_lpp[-STK_N_TE:].astype(np.float32)
+
+    return train_X, train_Y, test_X, test_Y
+
+
+def agnews2LPP(train_X_fn, train_Y_fn, train_T_fn, test_X_fn,
+              test_Y_fn, test_T_fn, embed_dir=None, k=10, t=1e0, l=2,
+              binary=False, batch_size=1000, metric='l2'):
+
+    train_X = np.loadtxt(train_X_fn, delimiter=' ')
+    train_Y = np.loadtxt(train_Y_fn, delimiter=' ').astype(np.int32)
+
+    with open(train_T_fn, 'r') as fp:
+        train_T = pickle.load(fp)
+
+    test_X = np.loadtxt(test_X_fn, delimiter=' ')
+    test_Y = np.loadtxt(test_Y_fn, delimiter=' ').astype(np.int32)
+
+    with open(test_T_fn, 'r') as fp:
+        test_T = pickle.load(fp)
+
+    X = np.concatenate([train_X, test_X], axis=0)
+    texts = train_T + test_T
+
+    if (metric=='wmd'):
+        X_lpp = tu.docs2LPP(X, texts, embed_dir=embed_dir, k=k, t=t, l=l,
+                            binary=binary, batch_size=batch_size)
+    else:
+        X_lpp = du.embedLPP(X, k=k, t=t, l=l, metric=metric,
+                            binary=binary, batch_size=batch_size)
+
+    train_X = X_lpp[:AG_N_TR].astype(np.float32)
+    test_X = X_lpp[-AG_N_TE:].astype(np.float32)
+
+    return train_X, train_Y, test_X, test_Y
 
 
 

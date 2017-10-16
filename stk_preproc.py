@@ -18,13 +18,14 @@ from preprocessing.preprocess import stk2Bow
 from preprocessing.preprocess import stk2Tfidf
 from preprocessing.preprocess import stk2DictIndex
 from preprocessing.preprocess import stk2Embed
+from preprocessing.preprocess import stk2LPP
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 5):
+    if (len(sys.argv) < 4):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./process_qtype.py <sample_src> <label_src> ' \
-              '<out_dir> <vocab_size>')
+              '<out_dir>')
         sys.exit()
 
     # open the datafiles
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     out_dir = sys.argv[3]
 
     # get the vocabulary (dictionary) size
-    vocab_size = int(sys.argv[4])
+    vocab_size = 2000
 
     print('converting to filtered texts')
     # convert stackoverflow data to bag of words vectors
@@ -103,7 +104,6 @@ if __name__ == '__main__':
     del test_X
 
     print('converting to sentence vector')
-    embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
     train_X, train_Y, test_X, test_Y = stk2Embed(sample_fp, label_fp,
                                                    sw_fp, embed_dir=None,
                                                    vtype='attention')
@@ -123,6 +123,25 @@ if __name__ == '__main__':
 
     # close the stopwords file
     sw_fp.close()
+
+    print('converting to LPP')
+    train_X_fn = out_dir + 'train_sentvec.dat'
+    train_L_fn = out_dir + 'train_label.dat'
+    train_T_fn = out_dir + 'train_texts.dat'
+    test_X_fn = out_dir + 'test_sentvec.dat'
+    test_L_fn = out_dir + 'test_label.dat'
+    test_T_fn = out_dir + 'test_texts.dat'
+    train_X, train_Y, test_X, test_Y = stk2LPP(train_X_fn, train_L_fn,
+                                                 train_T_fn, test_X_fn,
+                                                 test_L_fn, test_T_fn,
+                                                 embed_dir=None,
+                                                 k=10, t=1e0, l=50,
+                                                 binary=True, batch_size=5000,
+                                                 metric='l2')
+
+    # save processed data to the out directory
+    np.savetxt(out_dir + 'train_lpp.dat', train_X)
+    np.savetxt(out_dir + 'test_lpp.dat', test_X)
 
 
 

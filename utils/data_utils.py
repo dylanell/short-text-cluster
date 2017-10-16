@@ -45,7 +45,7 @@ def embedPCA(X, l=2, binary=False):
 # src: https://papers.nips.cc/paper/2359-locality-preserving-projections.pdf
 # TODO: can be very expensive to run, add workaround for singular N
 # (psuedo-inverse?)
-def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
+def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False, batch_size=1000):
     # get number of samples 'm'
     m = X.shape[0]
     n = np.prod(X.shape[1:])
@@ -56,15 +56,25 @@ def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
     # center X
     X = X - np.mean(X, axis=0)
 
+    batch_X, _, _ = getBatch(X, X, batch_size)
+
+    # get number of samples 'm'
+    m = batch_X.shape[0]
+    n = batch_X.shape[1]
+
     Y = np.zeros((m, l))
-    N = np.zeros((m, m))
+    Ne = np.zeros((m, m))
 
     from sklearn import metrics
     try:
-        PW = metrics.pairwise.pairwise_distances(X, metric=metric)
+        PW = metrics.pairwise.pairwise_distances(batch_X, metric=metric)
     except:
         print('unknown distance metric: %s, using default' % metric)
-        PW = metrics.pairwise.pairwise_distances(X, metric='l2')
+        PW = metrics.pairwise.pairwise_distances(batch_X, metric='l2')
+
+    # normalize pw if its not 0
+    if (np.linalg.norm(PW)):
+        PW = PW/np.linalg.norm(PW)
 
     # find  k nearest for each row
     for i in range(m):
@@ -75,13 +85,13 @@ def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
             k_nearest = order[1:k+1]
 
             # get neighbors
-            N[i, k_nearest] = 1
+            Ne[i, k_nearest] = 1
 
     # N = 1 if i is j's neighbor or j is i's neighbor
-    N = 1 * ((N.T + N) > 0)
+    Ne = 1 * ((Ne.T + Ne) > 0)
 
     if (metric != 'cosine'):
-        W = np.exp(-1 * PW / t) * N
+        W = np.exp(-1 * PW / t) * Ne
     else:
         W = (PW + 1)/2
 
@@ -94,9 +104,9 @@ def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
     # solve the generalized eigenvalue equation X^TLXa = lam * X^TDXa
     # where N = X^TDX and M = X^TLX and E = N^-1M so we have
     # Ea = lam*a ----> get eigenvalues of E
-    N = np.matmul(X.T, np.matmul(D, X))
+    N = np.matmul(batch_X.T, np.matmul(D, batch_X))
 
-    M = np.matmul(X.T, np.matmul(L, X))
+    M = np.matmul(batch_X.T, np.matmul(L, batch_X))
 
     # generalized eigenval equation now: Ma = lam * Na
 
@@ -113,7 +123,7 @@ def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
 
     if(binary):
         # get the median of each projected sample
-        median = np.median(Y, axis=1).reshape((m, 1))
+        median = np.median(Y, axis=1).reshape((Y.shape[0], 1))
 
         # if the element of a sample is greater than its median, it becomes 1,
         # otherwise it is 0
@@ -122,6 +132,9 @@ def embedLPP(X, k=5, t=1e1, l=2, metric='l2', binary=False):
     return Y
 
 def getBatch(X, Y, batch_size):
+    if(batch_size > X.shape[0]):
+        print('batch_size larger than dataset; setting to dataset size')
+        batch_size = X.shape[0]
     batchX = 0 * copy.deepcopy(X[:batch_size])
     batchY = 0 * copy.deepcopy(Y[:batch_size])
 
