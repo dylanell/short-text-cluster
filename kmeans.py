@@ -8,7 +8,7 @@ from sklearn import metrics
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 3):
+    if (len(sys.argv) < 4):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./kmeans.py <samples_fp> <labels_fp> <K>')
         sys.exit()

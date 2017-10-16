@@ -11,7 +11,7 @@ if __name__ == '__main__':
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
 
 
-    X = np.loadtxt('datasets/q-type/train_sentvec.dat', delimiter=' ')
+    X = np.loadtxt('datasets/q-type/train_lpp.dat', delimiter=' ')
     L = np.loadtxt('datasets/q-type/train_label.dat',
                     delimiter=' ').astype(np.int32)
 

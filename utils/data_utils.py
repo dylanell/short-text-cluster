@@ -56,7 +56,25 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False, batch_size=1000):
     # center X
     X = X - np.mean(X, axis=0)
 
-    batch_X, _, _ = getBatch(X, X, batch_size)
+    # project X to a lower dimensional space using PCA
+    sigma = np.matmul(X.T, X)           # calculate covariance of dataset
+    lam, v = linalg.eigh(sigma)         # get the eigenvals/vectors
+    order = np.argsort(lam)[::-1]       # order vals highest to lowest
+    lam = lam[order]
+    v = v[:, order]
+    tot_var = np.sum(lam)               # get the total variance of the data
+    cum_var = np.cumsum(lam)            # get the cumulative variance
+    capture = cum_var/tot_var           # determine dim to capture 98% of var
+    dim = np.sum(1 * (capture <= 0.98))
+
+    evecs = v[:, :dim]
+
+    W_pca = copy.deepcopy(evecs)
+
+    # project X with W_pca to get LPP's
+    X_pca = np.matmul(X, W_pca)
+
+    batch_X, _, _ = getBatch(X_pca, X_pca, batch_size)
 
     # get number of samples 'm'
     m = batch_X.shape[0]
@@ -109,7 +127,6 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False, batch_size=1000):
     M = np.matmul(batch_X.T, np.matmul(L, batch_X))
 
     # generalized eigenval equation now: Ma = lam * Na
-
     lam, v = linalg.eigh(M, b=N)
 
     order = np.argsort(lam)
@@ -118,8 +135,10 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False, batch_size=1000):
 
     evecs = v[:, bot_l]
 
+    W_lpp = copy.deepcopy(evecs)
+
     # project X to new space in R^l
-    Y = np.matmul(X, evecs)
+    Y = np.matmul(X, np.matmul(W_pca, W_lpp))
 
     if(binary):
         # get the median of each projected sample
