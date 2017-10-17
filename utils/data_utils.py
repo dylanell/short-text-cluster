@@ -170,3 +170,17 @@ def getBatch(X, Y, batch_size):
         indices.append(r)
 
     return batchX, batchY, indices
+
+
+# converts a vector of numeric class labels to one hot encoding
+def label2OneHot(labels):
+    # store number of labels
+    n = labels.size
+
+    # list all possible class values
+    vals = np.unique(labels)
+
+    # fill one hot array
+    oneHot  = (vals == labels)*1.0
+
+    return oneHot
