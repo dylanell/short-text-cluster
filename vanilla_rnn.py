@@ -56,7 +56,7 @@ if __name__ == '__main__':
     latent_dim = int(sys.argv[5])
 
     """ runtime parameters """
-    num_iter = 1000000
+    num_iter = 100000
     plot_per = 10000
     batch_size = 1
     plot = 1
@@ -78,12 +78,12 @@ if __name__ == '__main__':
 
     cell = tf.contrib.rnn.LSTMCell(latent_dim, state_is_tuple=True)
 
-    outputs, state = tf.nn.dynamic_rnn(cell=cell,
+    outputs, states = tf.nn.dynamic_rnn(cell=cell,
                                        inputs=inputs_emb,
                                        dtype=tf.float32,
                                        time_major=True)
 
-    rnn_outputs = tf.reshape(outputs[0][-1], (1, latent_dim))
+    rnn_outputs = tf.reshape(states[0][-1], (1, latent_dim))
 
     outputs = tf.contrib.layers.fully_connected(rnn_outputs, K,
                                              activation_fn=tf.nn.softmax)
