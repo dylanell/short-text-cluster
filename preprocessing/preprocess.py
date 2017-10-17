@@ -733,18 +733,3 @@ def agnews2LPP(train_X_fn, train_Y_fn, train_T_fn, test_X_fn,
     test_X = X_lpp[-AG_N_TE:].astype(np.float32)
 
     return train_X, train_Y, test_X, test_Y
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# end
