@@ -74,7 +74,7 @@ if __name__ == '__main__':
     #    logits=outputs
     #)
 
-    loss = tf.norm(tf.subtract(outputs, targets), ord=2)
+    loss = tf.reduce_mean(tf.pow(tf.subtract(outputs, targets), 2))
 
     error = tf.reduce_mean(loss)
 
