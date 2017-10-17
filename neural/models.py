@@ -70,7 +70,10 @@ class MultiLayerPerceptron(object):
                         y = tf.add(tf.matmul(self.inputs, self.W[i]), self.b[i])
                     self.layers.append(y)
             else:
-                y = tf.nn.tanh(tf.add(tf.matmul(self.layers[i-1], self.W[i]), self.b[i]))
+                if(len(self.layers)):
+                    y = tf.nn.tanh(tf.add(tf.matmul(self.layers[i-1], self.W[i]), self.b[i]))
+                else:
+                    y = tf.nn.tanh(tf.add(tf.matmul(self.inputs, self.W[i]), self.b[i]))
                 self.layers.append(y)
 
     def getVars(self):
@@ -107,7 +110,7 @@ class MultiLayerPerceptron(object):
             self._loss = None
         else:
             if self._loss is None:
-                self._loss = tf.reduce_mean(tf.pow(tf.subtract(self.predict, self.targets), 2))
+                self._loss = tf.reduce_mean((self.predict - self.targets)**2)
         return self._loss
 
 # end MultiLayerPerceptron
