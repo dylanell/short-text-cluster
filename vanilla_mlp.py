@@ -53,8 +53,8 @@ if __name__ == '__main__':
     latent_dim = int(sys.argv[5])
 
     """ runtime parameters """
-    num_iter = 1000
-    plot_per = 1
+    num_iter = 10000
+    plot_per = 10
     batch_size = 128
     plot = 1
     save_states = 1
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                                    inputs,
                                    scope='mlp',
                                    targets=targets,
-                                   out_type='softmax')
+                                   out_type='logits')
 
     optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(model.loss)
 

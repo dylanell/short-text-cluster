@@ -69,6 +69,12 @@ class MultiLayerPerceptron(object):
                     else:
                         y = tf.add(tf.matmul(self.inputs, self.W[i]), self.b[i])
                     self.layers.append(y)
+                elif (self.out_type == 'raw'):
+                    if(len(self.layers)):
+                        y = tf.add(tf.matmul(self.layers[i-1], self.W[i]), self.b[i])
+                    else:
+                        y = tf.add(tf.matmul(self.inputs, self.W[i]), self.b[i])
+                    self.layers.append(y)
             else:
                 if(len(self.layers)):
                     y = tf.nn.tanh(tf.add(tf.matmul(self.layers[i-1], self.W[i]), self.b[i]))
@@ -110,7 +116,14 @@ class MultiLayerPerceptron(object):
             self._loss = None
         else:
             if self._loss is None:
-                self._loss = tf.reduce_mean((self.predict - self.targets)**2)
+                if (self.out_type == 'logits'):
+                    stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                        labels=self.targets,
+                        logits=self.predict,
+                    )
+                    self._loss = tf.reduce_mean(stepwise_cross_entropy)
+                else:
+                    self._loss = tf.reduce_mean((self.predict - self.targets)**2)
         return self._loss
 
 # end MultiLayerPerceptron
