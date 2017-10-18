@@ -154,20 +154,20 @@ def getBatch(X, Y, batch_size):
     if(batch_size > X.shape[0]):
         print('batch_size larger than dataset; setting to dataset size')
         batch_size = X.shape[0]
+        return X, Y, range(X.shape[0])
+
     batchX = 0 * copy.deepcopy(X[:batch_size])
     batchY = 0 * copy.deepcopy(Y[:batch_size])
 
-    nx = batchX.shape[0]
-
-    selected = []
+    nx = X.shape[0]
     indices = []
     for i in range(batch_size):
         r = np.random.randint(0, nx)
-        while(r in selected):
+        while(r in indices):
              r = np.random.randint(0, nx)
+        indices.append(r)
         batchX[i] = X[r]
         batchY[i] = Y[r]
-        indices.append(r)
 
     return batchX, batchY, indices
 
