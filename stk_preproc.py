@@ -48,7 +48,7 @@ if __name__ == '__main__':
     out_dir = sys.argv[3]
 
     # get the vocabulary (dictionary) size
-    vocab_size = 2000
+    vocab_size = 20000
 
     print('converting to filtered texts')
     # convert stackoverflow data to bag of words vectors
@@ -93,8 +93,12 @@ if __name__ == '__main__':
     # convert stackoverflow data to indexes from a dictionary
     # used for joint training of the word embeddings
     print('converting to dictionary indices')
-    train_X, train_Y, test_X, test_Y = stk2DictIndex(sample_fp, label_fp,
+    train_X, train_Y, test_X, \
+    test_Y, dictionary = stk2DictIndex(sample_fp, label_fp,
                                             sw_fp, prune_dict=vocab_size)
+
+
+    dictionary.save(out_dir + 'vocabulary.dat')
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_indices.dat', train_X)

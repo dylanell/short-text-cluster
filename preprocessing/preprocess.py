@@ -188,7 +188,7 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     test_fp.seek(0)
     sw_fp.seek(0)
 
-    return train_X, train_Y, test_X, test_Y
+    return train_X, train_Y, test_X, test_Y, dictionary
 
 
 def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
@@ -393,7 +393,7 @@ def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000):
     label_fp.seek(0)
     sw_fp.seek(0)
 
-    return train_X, train_Y, test_X, test_Y
+    return train_X, train_Y, test_X, test_Y, dictionary
 
 
 def stk2Embed(sample_fp, label_fp, sw_fp, embed_dir, vtype='average'):
@@ -598,7 +598,7 @@ def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     test_fp.seek(0)
     sw_fp.seek(0)
 
-    return train_X, train_Y, test_X, test_Y
+    return train_X, train_Y, test_X, test_Y, dictionary
 
 
 # uses google word vectors to create sentence embeddings
