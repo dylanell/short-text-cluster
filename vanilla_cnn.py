@@ -144,23 +144,21 @@ if __name__ == '__main__':
                                  shape =[vocab_len, d],
                                  initializer=w_init)
 
-    def maxSeqLen(seq):
-        used = tf.cast(tf.not_equal(seq, NULL_IDX), tf.int32)
+    # mask to zero out vectors correspondong to nulls
+    def nullMask(seq):
+        used = tf.cast(tf.not_equal(seq, NULL_IDX), tf.float32)
         num = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 1), -1), tf.int32))
-        length = tf.reduce_max(tf.reduce_sum(used, 1))
-        return length, num
+        return used, num
 
     """ define the model """
 
     """ embedding and reshaping """
     # get the length of this input
-    s = maxSeqLen(inputs)[0]
-    num_samp = maxSeqLen(inputs)[1]
-
-    inputs_sliced = inputs[:, :tf.cast(s, tf.int32)]
+    mask = tf.expand_dims(nullMask(inputs)[0], [-1])
+    num_samp = nullMask(inputs)[1]
 
     # these ops embed the word vector placeholders using the embedding weights
-    inputs_emb = tf.nn.embedding_lookup(embeddings, inputs_sliced)
+    inputs_emb = mask * tf.nn.embedding_lookup(embeddings, inputs)
 
     # reshape inputs to be like a batch of "images" with pixel depth 1,
     # therefore making them 4D tensors
@@ -246,8 +244,8 @@ if __name__ == '__main__':
             batch_X, batch_Y, indices = getBatch(train_X, train_OH, batch_size)
             train_feed = {inputs: batch_X, targets: batch_Y, keep_prob: 0.5}
 
-            #probe = sess.run(num_samp, train_feed)
-            #print probe
+            #probe = sess.run(inputs_emb, train_feed)
+            #print probe[0, :10, :]
             #exit()
 
             # run a step of the autoencoder trainer
