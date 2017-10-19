@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 3):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./vanilla_ae.py <data_dir> <out_dir>')
+        print('[USAGE] ./vanilla_cnn.py <data_dir> <out_dir>')
         sys.exit()
 
     # get the data
@@ -123,14 +123,6 @@ if __name__ == '__main__':
     c3_bias = tf.get_variable("conv3_biases",
     initializer=(b_init * tf.ones([1], tf.float32)))
 
-
-    flat_size = num_maps * 3
-    w_out = tf.get_variable('out_weights',
-                            shape=[flat_size, K],
-                            initializer=w_init)
-    b_out = tf.get_variable("out_biases",
-    initializer=(b_init * tf.ones([K], tf.float32)))
-
     keep_prob = tf.placeholder(tf.float32)
 
     # cnn - want shape [1, d, s], rnn - want shape [s, 1, 300]
@@ -209,12 +201,13 @@ if __name__ == '__main__':
 
     """ fully connected layer """
     concat = tf.concat([c1_pool, c2_pool, c3_pool], axis=2)
+    flat_size = num_maps * 3
     flat = tf.reshape(concat, [num_samp, flat_size])
 
     dropout = tf.nn.dropout(flat, keep_prob=keep_prob)
 
-    # optionally add an activation function here like tanh
-    logits = tf.add(tf.matmul(dropout, w_out), b_out)  # logits
+    logits = tf.contrib.layers.fully_connected(dropout, K,
+                                             activation_fn=None)
 
     predict = tf.argmax(logits, axis=1)
 
@@ -229,8 +222,6 @@ if __name__ == '__main__':
     optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(loss)
 
     init = tf.global_variables_initializer()
-
-    test_E = []
 
     """ Tensorflow Session """
     with tf.Session() as sess:
