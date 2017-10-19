@@ -59,13 +59,13 @@ if __name__ == '__main__':
     E = []
 
     """ hyper parameters """
-    eta = 1e-4
-    num_maps = 20
+    eta = 1e-5
+    num_maps = 30
     latent_dim = num_maps * 3
-    margin = 10
+    margin = 50
 
     """ runtime parameters """
-    num_iter = 1000
+    num_iter = 10000
     plot_per = 100
     batch_size = 32
     plot = 1
@@ -303,5 +303,6 @@ if __name__ == '__main__':
 
     if plot:
         plt.plot(y)
+        #plt.plot(range(len(E)), E)
         plt.show()
     # end

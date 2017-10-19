@@ -282,6 +282,16 @@ if __name__ == '__main__':
         accuracy = float(correct)/float(num_test)*100.0
         print accuracy
 
+        O = np.zeros((n, flat_size))
+        for i in range(n):
+            test_feed = {inputs: train_X[None, i, :]}
+
+            out = sess.run(concat, test_feed)
+
+            O[i, :] = out
+
+        np.savetxt('train_aelatent.dat', O)
+
         sess.close()
 
     # save loss values to a csv file
@@ -293,31 +303,6 @@ if __name__ == '__main__':
     y = np.loadtxt('loss.csv', delimiter=',')
 
     if plot:
-        plt.plot(y)
+        #plt.plot(y)
+        plt.plot(range(len(E)), E)
         plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # end

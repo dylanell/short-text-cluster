@@ -108,6 +108,16 @@ if __name__ == '__main__':
 
         print acc
 
+        O = np.zeros((n, latent_dim))
+        for i in range(n):
+            test_feed = {inputs: train_X[None, i, :]}
+
+            out = sess.run(model.encode, test_feed)
+
+            O[i, :] = out
+
+        np.savetxt('train_aelatent.dat', O)
+
         sess.close()
 
     # save loss values to a csv file
