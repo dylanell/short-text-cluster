@@ -11,23 +11,25 @@ if __name__ == '__main__':
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
 
 
-    X = np.loadtxt('datasets/q-type/train_lpp.dat', delimiter=' ')
+    #X = np.loadtxt('datasets/q-type/train_sentvec.dat', delimiter=' ')
+    X = np.loadtxt('train_aelatent.dat', delimiter=' ')
     L = np.loadtxt('datasets/q-type/train_label.dat',
                     delimiter=' ').astype(np.int32)
 
     with open('datasets/q-type/train_texts.dat', 'r') as fp:
         T = pickle.load(fp)
 
-    """
 
+    """
     X = np.loadtxt('datasets/stk-ovflw/train_sentvec.dat', delimiter=' ')
     L = np.loadtxt('datasets/stk-ovflw/train_label.dat',
                     delimiter=' ').astype(np.int32)
 
     with open('datasets/stk-ovflw/train_texts.dat', 'r') as fp:
         T = pickle.load(fp)
+    """
 
-
+    """
     X = np.loadtxt('datasets/ag-news/train_sentvec.dat', delimiter=' ')
     L = np.loadtxt('datasets/ag-news/train_label.dat',
                     delimiter=' ').astype(np.int32)
