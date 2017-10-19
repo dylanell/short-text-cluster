@@ -40,9 +40,6 @@ if __name__ == '__main__':
     eta = 1e-3
     latent_dim = int(sys.argv[2])
 
-    alpha = 6.26
-    ktop = latent_dim//4
-
     """ runtime parameters """
     num_iter = 1000
     plot_per = 1
