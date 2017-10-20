@@ -5,13 +5,86 @@ def validateType(out_type):
     valid_types = ['softmax', 'tanh', 'sigmoid', 'logits', 'raw']
     assert(out_type in valid_types), 'out_type \'%s\' is not valid' % out_type
 
+class LSTM(object):
+    def __init__(self, emb_dims, dims, inputs, targets, null_word,
+                 kp=1.0, eta=1e-3):
+        # get arguments
+        vocab_len, d = emb_dims
+        latent_dim, K = dims
+
+        # initializers for any weights and biases in the model
+        w_init = tf.contrib.layers.xavier_initializer()
+        b_init = 0.01
+
+        # embedding matrix for all words in our vocabulary
+        embeddings = tf.get_variable('embedding_weights',
+                                     shape =[vocab_len, d],
+                                     initializer=w_init)
+
+        # mark the used words
+        used = tf.cast(tf.not_equal(inputs, null_word), tf.int32)
+
+        # gett eh lengths of each sentence in the input
+        length = tf.cast(tf.reduce_sum(used, 1), tf.int32)
+
+        # these ops embed the word vector placeholders using the embedding weights
+        inputs_emb = tf.nn.embedding_lookup(embeddings, inputs)
+
+        rnn_inputs = tf.transpose(inputs_emb, [1, 0, 2])
+        #cnn_inputs = tf.transpose(inputs_emb, [0, 2, 1])
+
+        cell = tf.contrib.rnn.LSTMCell(latent_dim, state_is_tuple=True)
+
+        outputs, states = tf.nn.dynamic_rnn(cell=cell,
+                                           inputs=rnn_inputs,
+                                           sequence_length=length,
+                                           dtype=tf.float32,
+                                           time_major=True)
+
+        # get the hidden state of the network
+        self._latent = states.h
+
+        dropout = tf.nn.dropout(self._latent, keep_prob=kp)
+
+        logits = tf.contrib.layers.fully_connected(dropout, K,
+                                                 activation_fn=None)
+
+        self._prediction = tf.argmax(logits, axis=1)
+
+        # loss function
+        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            labels=targets,
+            logits=logits,
+        )
+        self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+        # define the optimizer
+        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+
+
+    @property
+    def predict(self):
+        return self._prediction
+
+    @property
+    def encode(self):
+        return self._latent
+
+    @property
+    def optimize(self):
+        return self._optimizer
+
+    @property
+    def loss(self):
+        return self._error
+
+
+
+
+
 class TextCNN(object):
     def __init__(self, emb_dims, filt_dims, fc_dims, inputs,
-                 null_word, targets=None, scope='TCNN', out_type='logits', kp=1.0, eta=1e-3):
-        # tensorflow ops
-        self._encode = None
-        self._predict = None
-        self._loss = None
+                 targets, null_word, kp=1.0, eta=1e-3):
 
         vocab_len, d = emb_dims
         latent_dim, K = fc_dims

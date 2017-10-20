@@ -88,7 +88,7 @@ if __name__ == '__main__':
     targets = tf.placeholder(tf.float32, [None, K])
 
     model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
-                NULL_IDX, targets=targets, out_type='logits', kp=keep_prob)
+                targets, NULL_IDX, kp=keep_prob, eta=eta)
 
     init = tf.global_variables_initializer()
 
@@ -159,7 +159,7 @@ if __name__ == '__main__':
 
             O[i, :] = out
 
-        np.savetxt('latent.dat', O)
+        np.savetxt('train_latent.dat', O)
 
         sess.close()
 

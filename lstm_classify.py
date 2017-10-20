@@ -20,6 +20,8 @@ import gensim
 from utils.data_utils import getBatch
 from utils.data_utils import label2OneHot
 
+from neural.models import LSTM
+
 NULL = '__'
 
 if __name__ == '__main__':
@@ -81,53 +83,10 @@ if __name__ == '__main__':
     # placeholder for the rnn targets (one-hot encodings)
     targets = tf.placeholder(tf.float32, [None, K])
 
-    # embedding matrix for all words in our vocabulary
-    embeddings = tf.get_variable('embedding_weights',
-                                 shape =[vocab_len, d],
-                                 initializer=w_init)
-
-    def seqLen(seq):
-        used = tf.cast(tf.not_equal(seq, NULL_IDX), tf.int32)
-        length = tf.reduce_sum(used, 1)
-        length = tf.cast(length, tf.int32)
-        return length
-
-    length = seqLen(inputs)
-
-    # these ops embed the word vector placeholders using the embedding weights
-    inputs_emb = tf.nn.embedding_lookup(embeddings, inputs)
-
-    rnn_inputs = tf.transpose(inputs_emb, [1, 0, 2])
-    #cnn_inputs = tf.transpose(inputs_emb, [0, 2, 1])
-
-    cell = tf.contrib.rnn.LSTMCell(latent_dim, state_is_tuple=True)
-
-    outputs, states = tf.nn.dynamic_rnn(cell=cell,
-                                       inputs=rnn_inputs,
-                                       sequence_length=length,
-                                       dtype=tf.float32,
-                                       time_major=True)
-
-    # get the hidden state of the network
-    rnn_outputs = states.h
-
-    dropout = tf.nn.dropout(rnn_outputs, keep_prob=keep_prob)
-
-    logits = tf.contrib.layers.fully_connected(dropout, K,
-                                             activation_fn=None)
-
-    predict = tf.argmax(logits, axis=1)
-
-    # step-wise wross entropy of every word prediction between outputs and targets
-    stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-        labels=targets,
-        logits=logits,
-    )
-    loss = tf.reduce_mean(stepwise_cross_entropy)
-
-    # define the optimizer
-    optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(loss)
-
+    emb_dims = [vocab_len, d]
+    dims = [latent_dim, K]
+    model = LSTM(emb_dims, dims, inputs, targets,
+                 NULL_IDX, kp=keep_prob, eta=1e-3)
 
     init = tf.global_variables_initializer()
 
@@ -149,10 +108,10 @@ if __name__ == '__main__':
             #exit()
 
             # run a step of the autoencoder trainer
-            sess.run(optimizer, train_feed)
+            sess.run(model.optimize, train_feed)
 
             # get loss of this sample
-            e = sess.run(loss, train_feed)
+            e = sess.run(model.loss, train_feed)
             inst_E.append(e)
 
             # if we have hit a plotting period and we are in plotting
@@ -181,7 +140,7 @@ if __name__ == '__main__':
             test_feed = {inputs: batch_X, keep_prob: 1.0}
 
             # run a step of the autoencoder trainer
-            test_Y_hat[i] = sess.run(predict, test_feed)
+            test_Y_hat[i] = sess.run(model.predict, test_feed)
 
         # get accuracy
         if (0 in np.unique(train_Y)):
@@ -195,11 +154,11 @@ if __name__ == '__main__':
         for i in range(n):
             test_feed = {inputs: train_X[None, i, :]}
 
-            out = sess.run(rnn_outputs, test_feed)
+            out = sess.run(model.encode, test_feed)
 
             O[i, :] = out
 
-        np.savetxt('latent.dat', O)
+        np.savetxt('train_latent.dat', O)
 
         sess.close()
 
