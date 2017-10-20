@@ -66,7 +66,7 @@ if __name__ == '__main__':
     margin = 2.0
 
     """ runtime parameters """
-    num_iter = 30000
+    num_iter = 500000
     plot_per = 1000
     batch_size = 1
     plot = 1
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     """ contrastive loss """
     # need to use l1 dist
     diff = outputs[0, :] - outputs[1, :]
-    dist = tf.norm(diff, ord='euclidean')
+    dist = tf.norm(diff, ord=1)
 
     l_s = 0.5 * (dist**2)
     l_d = 0.5 * (tf.maximum(0.0, margin - dist)**2)
@@ -293,15 +293,16 @@ if __name__ == '__main__':
         sys.stdout.write('\rTraining: 100%\n\n')
         sys.stdout.flush()
 
+        n = test_X.shape[0]
         O = np.zeros((n, latent_dim))
         for i in range(n):
-            test_feed = {inputs: train_X[None, i, :]}
+            test_feed = {inputs: test_X[None, i, :]}
 
             out = sess.run(outputs, test_feed)
 
             O[i, :] = out
 
-        np.savetxt('train_aelatent.dat', O)
+        np.savetxt('latent.dat', O)
 
         sess.close()
 
