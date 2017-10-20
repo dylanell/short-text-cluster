@@ -14,7 +14,7 @@ class MultiLayerPerceptron(object):
         #self._optimize = None  # NOTE: not yet implemented internally
 
         # check if valid output type
-        valid_types = ['softmax', 'tanh', 'sigmoid', 'logits']
+        valid_types = ['softmax', 'tanh', 'sigmoid', 'logits', 'raw']
         assert(out_type in valid_types), 'out_type \'%s\' is not valid' % out_type
 
         # variables
