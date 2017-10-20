@@ -60,14 +60,15 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-5
-    num_maps = 30
-    latent_dim = num_maps * 3
-    margin = 50
+    num_maps = 100
+    flat_dim = num_maps * 3
+    latent_dim = 50
+    margin = 2.0
 
     """ runtime parameters """
-    num_iter = 10000
-    plot_per = 100
-    batch_size = 32
+    num_iter = 30000
+    plot_per = 1000
+    batch_size = 1
     plot = 1
 
     """ conv hyper params """
@@ -126,8 +127,7 @@ if __name__ == '__main__':
     initializer=(b_init * tf.ones([1], tf.float32)))
 
     # cnn - want shape [1, d, s], rnn - want shape [s, 1, 300]
-    inputs_left = tf.placeholder(tf.int32, [None, None])
-    inputs_right = tf.placeholder(tf.int32, [None, None])
+    inputs = tf.placeholder(tf.int32, [None, None])
 
     # placeholder for the rnn targets (one-hot encodings)
     targets = tf.placeholder(tf.float32, [None, 1])
@@ -167,7 +167,7 @@ if __name__ == '__main__':
 
         c1_biased = c1_out + c1_bias
 
-        c1_act = tf.nn.relu(c1_biased)
+        c1_act = tf.nn.tanh(c1_biased)
 
         c1_pool = tf.reduce_max(c1_act, axis=1)
 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
         c2_biased = c2_out + c2_bias
 
-        c2_act = tf.nn.relu(c2_biased)
+        c2_act = tf.nn.tanh(c2_biased)
 
         c2_pool = tf.reduce_max(c2_act, axis=1)
 
@@ -195,44 +195,40 @@ if __name__ == '__main__':
 
         c3_biased = c3_out + c3_bias
 
-        c3_act = tf.nn.relu(c3_biased)
+        c3_act = tf.nn.tanh(c3_biased)
 
         c3_pool = tf.reduce_max(c3_act, axis=1)
 
 
         """ fully connected layer """
         concat = tf.concat([c1_pool, c2_pool, c3_pool], axis=2)
-        flat = tf.reshape(concat, [num_samp, latent_dim])
+        flat = tf.reshape(concat, [num_samp, flat_dim])
 
-        return flat
+        output = tf.contrib.layers.fully_connected(flat, latent_dim,
+                                                 activation_fn=tf.nn.tanh)
 
-    with tf.variable_scope('model'):
-        flat_left = model(inputs_left)
-    with tf.variable_scope('model', reuse=True):
-        flat_right = model(inputs_right)
+        # normalize the features
+        output_norm = tf.nn.l2_normalize(output, dim=1)
+
+        return output_norm
+
+    outputs = model(inputs)
 
     """ contrastive loss """
     # need to use l1 dist
+    diff = outputs[0, :] - outputs[1, :]
+    dist = tf.norm(diff, ord='euclidean')
 
-    test = tf.subtract(flat_left, flat_right)
+    l_s = 0.5 * (dist**2)
+    l_d = 0.5 * (tf.maximum(0.0, margin - dist)**2)
 
-    dist = tf.norm(tf.subtract(flat_left, flat_right), ord=1, axis=1)
-
-    l_s = tf.multiply(0.5, tf.pow(dist, 2))
-    l_d = tf.multiply(0.5, tf.pow(tf.maximum(0.0, margin - dist), 2))
-
-    error = tf.add(tf.multiply(tf.subtract(1.0, targets), l_s), tf.multiply(targets, l_d))
-
-    loss = tf.reduce_mean(error)
+    loss = (1.0 - targets[0, 0])*l_s + (targets[0, 0]*l_d)
 
     # define the optimizer
     optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(loss)
 
     # variable initializer
     init = tf.global_variables_initializer()
-
-    # probability of selecting a same sample from the dataset
-    same_prob = 0.0
 
     """ Tensorflow Session """
     with tf.Session() as sess:
@@ -242,19 +238,31 @@ if __name__ == '__main__':
 
         # train the network
         for i in range(num_iter):
-            # grab a randomly chosen batch from the training data
-            batch_X, batch_Y, indices = getBatch(train_X, train_OH, batch_size * 2)
-            equal = batch_Y[:batch_size] == batch_Y[batch_size:]
-            tar = (1 * np.all(equal, axis=1)).reshape((batch_size, 1))
-            train_feed = {inputs_left: batch_X[:batch_size],
-                          inputs_right: batch_X[batch_size:],
-                          targets: tar}
 
-            #probe = sess.run(dist, train_feed)
-            #print probe
-            #probe = sess.run(l_d, train_feed)
-            #print probe
-            #exit()
+            des = np.random.uniform()
+
+            sample = np.random.randint(0, n)
+            batch_X = train_X[None, sample, :]
+
+            if (des > 0.5):
+                # choose a disimilar sample
+                tar = np.ones((1, 1))
+                while True:
+                    neighbor = np.random.randint(0, n)
+                    if (train_Y[sample] != train_Y[neighbor]):
+                        break
+            else:
+                # choose a similar sample
+                tar = np.zeros((1, 1))
+                while True:
+                    neighbor = np.random.randint(0, n)
+                    if ((train_Y[sample] == train_Y[neighbor]) and  \
+                                                (sample != neighbor)):
+                        break
+
+            batch_X = np.append(batch_X, train_X[None, neighbor, :], axis=0)
+
+            train_feed = {inputs: batch_X, targets: tar}
 
             # run a step of the autoencoder trainer
             sess.run(optimizer, train_feed)
@@ -272,6 +280,10 @@ if __name__ == '__main__':
                 e = np.mean(inst_E)
                 E.append(e)
                 inst_E = []
+                out = sess.run(outputs, train_feed)
+                if(np.any(np.isnan(out)) == True):
+                    print('GOT NANS')
+                    exit()
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
@@ -283,9 +295,9 @@ if __name__ == '__main__':
 
         O = np.zeros((n, latent_dim))
         for i in range(n):
-            test_feed = {inputs_left: train_X[None, i, :]}
+            test_feed = {inputs: train_X[None, i, :]}
 
-            out = sess.run(flat_left, test_feed)
+            out = sess.run(outputs, test_feed)
 
             O[i, :] = out
 
