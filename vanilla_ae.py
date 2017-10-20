@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
             O[i, :] = out
 
-        np.savetxt('train_aelatent.dat', O)
+        np.savetxt('latent.dat', O)
 
         sess.close()
 
