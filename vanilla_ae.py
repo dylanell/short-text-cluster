@@ -71,11 +71,11 @@ if __name__ == '__main__':
     #    logits=outputs
     #)
 
-    loss = tf.reduce_mean(tf.pow(tf.subtract(outputs, targets), 2))
+    error = tf.reduce_mean(tf.pow(tf.subtract(outputs, targets), 2))
 
-    error = tf.reduce_mean(loss)
+    loss = tf.reduce_mean(error)
 
-    optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(error)
+    optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(loss)
 
     init = tf.global_variables_initializer()
 
@@ -103,6 +103,18 @@ if __name__ == '__main__':
 
         sys.stdout.write('\rTraining: 100%\n\n')
         sys.stdout.flush()
+
+        O = np.zeros((n, latent_dim))
+        for i in range(n):
+            test_feed = {inputs: X[None, i, :]}
+
+            out = sess.run(encoder.predict, test_feed)
+
+            O[i, :] = out
+
+        np.savetxt('train_aelatent.dat', O)
+
+        sess.close()
 
         sess.close()
 
