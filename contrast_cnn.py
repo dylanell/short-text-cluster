@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     """ runtime parameters """
     num_iter = 500000
-    plot_per = 1000
+    plot_per = 5000
     batch_size = 1
     plot = 1
 
@@ -293,6 +293,17 @@ if __name__ == '__main__':
         sys.stdout.write('\rTraining: 100%\n\n')
         sys.stdout.flush()
 
+        #n = test_X.shape[0]
+        O = np.zeros((n, latent_dim))
+        for i in range(n):
+            test_feed = {inputs: train_X[None, i, :]}
+
+            out = sess.run(outputs, test_feed)
+
+            O[i, :] = out
+
+        np.savetxt('train_latent.dat', O)
+
         n = test_X.shape[0]
         O = np.zeros((n, latent_dim))
         for i in range(n):
@@ -302,7 +313,7 @@ if __name__ == '__main__':
 
             O[i, :] = out
 
-        np.savetxt('latent.dat', O)
+        np.savetxt('test_latent.dat', O)
 
         sess.close()
 
