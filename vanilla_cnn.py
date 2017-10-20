@@ -61,6 +61,8 @@ if __name__ == '__main__':
     """ hyper parameters """
     eta = 1e-3
     num_maps = 100
+    flat_dim = num_maps * 3
+    latent_dim = 50
 
     """ runtime parameters """
     num_iter = 1000
@@ -166,7 +168,7 @@ if __name__ == '__main__':
 
     c1_biased = c1_out + c1_bias
 
-    c1_act = tf.nn.relu(c1_biased)
+    c1_act = tf.nn.tanh(c1_biased)
 
     c1_pool = tf.reduce_max(c1_act, axis=1)
 
@@ -180,7 +182,7 @@ if __name__ == '__main__':
 
     c2_biased = c2_out + c2_bias
 
-    c2_act = tf.nn.relu(c2_biased)
+    c2_act = tf.nn.tanh(c2_biased)
 
     c2_pool = tf.reduce_max(c2_act, axis=1)
 
@@ -194,19 +196,23 @@ if __name__ == '__main__':
 
     c3_biased = c3_out + c3_bias
 
-    c3_act = tf.nn.relu(c3_biased)
+    c3_act = tf.nn.tanh(c3_biased)
 
     c3_pool = tf.reduce_max(c3_act, axis=1)
 
 
     """ fully connected layer """
     concat = tf.concat([c1_pool, c2_pool, c3_pool], axis=2)
-    flat_size = num_maps * 3
-    flat = tf.reshape(concat, [num_samp, flat_size])
+    flat = tf.reshape(concat, [num_samp, flat_dim])
 
-    dropout = tf.nn.dropout(flat, keep_prob=keep_prob)
+    dropout1 = tf.nn.dropout(flat, keep_prob=keep_prob)
 
-    logits = tf.contrib.layers.fully_connected(dropout, K,
+    latent = tf.contrib.layers.fully_connected(dropout1, latent_dim,
+                                             activation_fn=tf.nn.tanh)
+
+    dropout2 = tf.nn.dropout(latent, keep_prob=keep_prob)
+
+    logits = tf.contrib.layers.fully_connected(dropout2, K,
                                              activation_fn=None)
 
     predict = tf.argmax(logits, axis=1)
@@ -282,11 +288,11 @@ if __name__ == '__main__':
         accuracy = float(correct)/float(num_test)*100.0
         print accuracy
 
-        O = np.zeros((n, flat_size))
+        O = np.zeros((n, latent_dim))
         for i in range(n):
-            test_feed = {inputs: train_X[None, i, :]}
+            test_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
 
-            out = sess.run(concat, test_feed)
+            out = sess.run(latent, test_feed)
 
             O[i, :] = out
 
