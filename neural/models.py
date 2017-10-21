@@ -6,6 +6,80 @@ def validateType(out_type):
     assert(out_type in valid_types), 'out_type \'%s\' is not valid' % out_type
 
 
+# two layer ff neural network that takes input from summed word embeddings
+class NBOW(object):
+    def __init__(self, emb_dims, dims, inputs, targets, null_word,
+                 kp=1.0, eta=1e-3):
+        # get arguments
+        vocab_len, d = emb_dims
+        latent_dim, K = dims
+
+        # initializers for any weights and biases in the model
+        w_init = tf.contrib.layers.xavier_initializer()
+        b_init = 0.01
+
+        # embedding matrix for all words in our vocabulary
+        embeddings = tf.get_variable('embedding_weights',
+                                     shape =[vocab_len, d],
+                                     initializer=w_init)
+
+        """ embedding and reshaping """
+        # mark all words that are not null
+        used = tf.cast(tf.not_equal(inputs, null_word), tf.float32)
+
+        # count how many samples in this batch
+        num_samp = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 1), -1), tf.int32))
+
+        # create a mask to zero out null words
+        mask = tf.expand_dims(used, [-1])
+
+        # embed the words and mask
+        inputs_emb = mask * tf.nn.embedding_lookup(embeddings, inputs)
+
+        inputs_vec = tf.reduce_sum(inputs_emb, axis=1)
+
+        self._latent = tf.contrib.layers.fully_connected(inputs_vec, latent_dim,
+                                                       activation_fn=tf.nn.tanh)
+
+        dropout = tf.nn.dropout(self._latent, keep_prob=kp)
+
+        logits = tf.contrib.layers.fully_connected(dropout, K,
+                                                 activation_fn=None)
+
+        self._prediction = tf.argmax(logits, axis=1)
+
+        # define the loss
+        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            labels=targets,
+            logits=logits,
+        )
+        self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+        # define the optimizer
+        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+
+
+    @property
+    def predict(self):
+        return self._prediction
+
+    @property
+    def encode(self):
+        return self._latent
+
+    @property
+    def optimize(self):
+        return self._optimizer
+
+    @property
+    def loss(self):
+        return self._error
+
+    @property
+    def probe(self):
+        return self._test
+
+
 class LSTM(object):
     def __init__(self, emb_dims, dims, inputs, targets, null_word,
                  kp=1.0, eta=1e-3):
