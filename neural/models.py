@@ -5,6 +5,7 @@ def validateType(out_type):
     valid_types = ['softmax', 'tanh', 'sigmoid', 'logits', 'raw']
     assert(out_type in valid_types), 'out_type \'%s\' is not valid' % out_type
 
+
 class LSTM(object):
     def __init__(self, emb_dims, dims, inputs, targets, null_word,
                  kp=1.0, eta=1e-3):
@@ -79,7 +80,174 @@ class LSTM(object):
         return self._error
 
 
+class DynamicCNN(object):
+    def __init__(self, emb_dims, filt_dims, fc_dims, inputs,
+                 targets, null_word, k_top_v=3, kp=1.0, eta=1e-3):
 
+        vocab_len, d = emb_dims
+        latent_dim, K = fc_dims
+
+        num_layers = len(filt_dims)
+
+        # initializers for any weights and biases in the model
+        w_init = tf.contrib.layers.xavier_initializer()
+        b_init = 0.01
+
+        # filter = # [height, width, input_depth, num_filters]
+        c1_filt_dim = [filt_dims[0][0], 1, 1, filt_dims[0][1]]
+        c1_strides = [1, 1, 1, 1]
+        c1_pad = [[0, 0],
+                  [filt_dims[0][0] - 1, filt_dims[0][0] - 1],
+                  [0, 0],
+                  [0, 0]]
+
+        c2_filt_dim = [filt_dims[1][0], 1, filt_dims[0][1], filt_dims[1][1]]
+        c2_strides = [1, 1, 1, 1]
+        c2_pad = [[0, 0],
+                  [filt_dims[1][0] - 1, filt_dims[1][0] - 1],
+                  [0, 0],
+                  [0, 0]]
+
+        # amount of kmax pooling at top layer
+        k_top = tf.constant(k_top_v, dtype=tf.float32)
+
+        # number of convolution layers
+        L = tf.constant(num_layers, dtype=tf.float32)
+
+        # filter weights for conv1
+        c1_filt = tf.get_variable('conv1_filters',
+                                     shape=c1_filt_dim,
+                                     initializer=w_init)
+
+        c1_bias = tf.get_variable("conv1_biases",
+        initializer=(b_init * tf.ones([d/2, c1_filt_dim[-1]], tf.float32)))
+
+        # filter weights for conv2
+        c2_filt = tf.get_variable('conv2_filters',
+                                     shape=c2_filt_dim,
+                                     initializer=w_init)
+
+        c2_bias = tf.get_variable("conv2_biases",
+        initializer=(b_init * tf.ones([d/2/2, c2_filt_dim[-1]], tf.float32)))
+
+        # embedding matrix for all words in our vocabulary
+        embeddings = tf.get_variable('embedding_weights',
+                                     shape =[vocab_len, d],
+                                     initializer=w_init)
+
+        """ embedding and reshaping """
+        # mark all words that are not null
+        used = tf.cast(tf.not_equal(inputs, null_word), tf.float32)
+
+        # count how many samples in this batch (batch_size)
+        num_samp = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 1), -1), tf.int32))
+
+        # count how many samples in this batch (batch_size)
+        s = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 0), -1), tf.int32))
+
+        self._test = s
+
+        # create a mask to zero out null words
+        mask = tf.expand_dims(used, [-1])
+
+        # embed the words and mask
+        inputs_emb = mask * tf.nn.embedding_lookup(embeddings, inputs)
+
+        # reshape inputs to be like a batch of "images" with pixel depth 1,
+        # therefore making them 4D tensors
+        inputs_resh = tf.expand_dims(inputs_emb, -1)
+
+        """ convolution layer 1 """
+        # pad the inputs
+        c1_padded = tf.pad(inputs_resh, c1_pad)
+
+        # perform wide convolution 1
+        c1_out = tf.nn.conv2d(c1_padded, c1_filt,
+                                 strides=c1_strides, padding='VALID')
+
+        # perform folding
+        c1_fold = tf.add(c1_out[:, :, ::2, :], c1_out[:, :, 1::2, :])
+
+        # get the dynamic k value
+        k1 = tf.cast(tf.maximum(k_top,
+                        tf.ceil(((L - 1)/L)*tf.cast(s, tf.float32))), tf.int32)
+
+        # take the k1 max pool of the convolution output
+        c1_topk = tf.nn.top_k(tf.transpose(c1_fold, [0, 3, 2, 1]), k1)[0]
+        c1_topk = tf.transpose(c1_topk, [0, 3, 2, 1])
+
+        # add bias and non-linear activation
+        c1_act = tf.nn.tanh(tf.add(c1_topk, c1_bias))
+
+        """ convolution layer 2 """
+        # pad the inputs
+        c2_padded = tf.pad(c1_act, c2_pad)
+
+        # perform wide convolution 2
+        c2_out = tf.nn.conv2d(c2_padded, c2_filt,
+                                 strides=c2_strides, padding='VALID')
+
+        # perform folding
+        c2_fold = tf.add(c2_out[:, :, ::2, :], c2_out[:, :, 1::2, :])
+
+        # get the dynamic k value
+        k2 = tf.cast(tf.maximum(k_top,
+                        tf.ceil(((L - 2)/L) * tf.cast(s, tf.float32))), tf.int32)
+
+        # take the k2 max pool of the convolution output
+        c2_topk = tf.nn.top_k(tf.transpose(c2_fold, [0, 3, 2, 1]), k2)[0]
+        c2_topk = tf.transpose(c2_topk, [0, 3, 2, 1])
+
+        # add bias and non-linear activation
+        c2_act = tf.nn.tanh(tf.add(c2_topk, c2_bias))
+
+        """ fully connected layer """
+        # weightst for fully connected layer
+        flat_size = (d/2/2) * k_top_v * c2_filt_dim[-1]
+
+        flat = tf.reshape(c2_act, [num_samp, flat_size])
+
+        dropout1 = tf.nn.dropout(flat, keep_prob=kp)
+
+        self._latent = tf.contrib.layers.fully_connected(dropout1, latent_dim,
+                                                 activation_fn=tf.nn.tanh)
+
+        dropout2 = tf.nn.dropout(self._latent, keep_prob=kp)
+
+        logits = tf.contrib.layers.fully_connected(dropout2, K,
+                                                 activation_fn=None)
+
+        self._prediction = tf.argmax(logits, axis=1)
+
+        # define the loss
+        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            labels=targets,
+            logits=logits,
+        )
+        self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+        # define the optimizer
+        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+
+    @property
+    def predict(self):
+        return self._prediction
+
+    @property
+    def encode(self):
+        return self._latent
+
+    @property
+    def optimize(self):
+        return self._optimizer
+
+    @property
+    def loss(self):
+        return self._error
+
+    @property
+    def probe(self):
+        return self._test
 
 
 class TextCNN(object):
@@ -151,8 +319,6 @@ class TextCNN(object):
         """ embedding and reshaping """
         # mark all words that are not null
         used = tf.cast(tf.not_equal(inputs, null_word), tf.float32)
-
-        self._test = kp
 
         # count how many samples in this batch
         num_samp = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 1), -1), tf.int32))
@@ -250,12 +416,6 @@ class TextCNN(object):
     @property
     def loss(self):
         return self._error
-
-    @property
-    def probe(self):
-        return self._test
-
-
 
 
 # vanilla feed-forward neural network with sigmoid activation at all
@@ -383,5 +543,3 @@ class MultiLayerPerceptron(object):
                 else:
                     self._loss = tf.reduce_mean((self.predict - self.targets)**2)
         return self._loss
-
-# end MultiLayerPerceptron
