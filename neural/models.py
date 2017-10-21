@@ -177,7 +177,7 @@ class DynamicCNN(object):
         c1_topk = tf.transpose(c1_topk, [0, 3, 2, 1])
 
         # add bias and non-linear activation
-        c1_act = tf.nn.tanh(tf.add(c1_topk, c1_bias))
+        c1_act = tf.nn.relu(tf.add(c1_topk, c1_bias))
 
         """ convolution layer 2 """
         # pad the inputs
@@ -199,7 +199,7 @@ class DynamicCNN(object):
         c2_topk = tf.transpose(c2_topk, [0, 3, 2, 1])
 
         # add bias and non-linear activation
-        c2_act = tf.nn.tanh(tf.add(c2_topk, c2_bias))
+        c2_act = tf.nn.relu(tf.add(c2_topk, c2_bias))
 
         """ fully connected layer """
         # weightst for fully connected layer
