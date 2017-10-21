@@ -126,8 +126,6 @@ if __name__ == '__main__':
     else:
         print('model \'%s\' is not valid' % model_type)
 
-
-
     init = tf.global_variables_initializer()
 
     """ Tensorflow Session """
