@@ -52,9 +52,13 @@ if __name__ == '__main__':
     del vocab
     del rev_vocab
 
-    n = len(train_X)
+    # size of inputs [n, s] = [num_samples, max_seq_len]
+    n, s = train_X.shape
+
+    # dimensionality of the word embeddings
     d = 64
 
+    # dimensionality of the output (num classes)
     K = len(np.unique(train_Y))
 
     # for collecting error values
@@ -62,29 +66,29 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
-    latent_dim = 300
 
     """ runtime parameters """
-    num_iter = 1000
+    num_iter = 2000
     plot_per = 100
-    batch_size = 8
+    batch_size = 32
     plot = 1
 
-    """ tensor flow ops """
-    # initializers for any weights and biases in the model
-    w_init = tf.contrib.layers.xavier_initializer()
-    b_init = 0.01
-
-    keep_prob = tf.placeholder(tf.float32)
-
-    # cnn - want shape [1, d, s], rnn - want shape [s, 1, 300]
-    inputs = tf.placeholder(tf.int32, [None, None])
-
-    # placeholder for the rnn targets (one-hot encodings)
-    targets = tf.placeholder(tf.float32, [None, K])
-
+    """ model parameters """
+    latent_dim = 300
     emb_dims = [vocab_len, d]
     dims = [latent_dim, K]
+
+    """ tensor flow ops """
+    # keep probability for dropout layers
+    keep_prob = tf.placeholder(tf.float32)
+
+    # placeholder for inputs [batch_size, max_seq_len]
+    inputs = tf.placeholder(tf.int32, [None, None])
+
+    # placeholder for targets [batch_size, num_classes]
+    targets = tf.placeholder(tf.float32, [None, K])
+
+    # initialize the model
     model = LSTM(emb_dims, dims, inputs, targets,
                  NULL_IDX, kp=keep_prob, eta=1e-3)
 
@@ -102,9 +106,8 @@ if __name__ == '__main__':
             batch_X, batch_Y, indices = getBatch(train_X, train_OH, batch_size)
             train_feed = {inputs: batch_X, targets: batch_Y, keep_prob: 0.5}
 
-            #print batch_X
-            #probe = sess.run(states.h, train_feed)
-            #print probe.shape
+            #probe = sess.run(model.probe, train_feed)
+            #print probe
             #exit()
 
             # run a step of the autoencoder trainer
@@ -152,7 +155,7 @@ if __name__ == '__main__':
 
         O = np.zeros((n, latent_dim))
         for i in range(n):
-            test_feed = {inputs: train_X[None, i, :]}
+            test_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
 
             out = sess.run(model.encode, test_feed)
 
@@ -171,6 +174,6 @@ if __name__ == '__main__':
     y = np.loadtxt('loss.csv', delimiter=',')
 
     if plot:
-        #plt.plot(y)
-        plt.plot(range(len(E)), E)
+        plt.plot(y)
+        #plt.plot(range(len(E)), E)
         plt.show()

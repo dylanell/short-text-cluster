@@ -52,9 +52,13 @@ if __name__ == '__main__':
     del vocab
     del rev_vocab
 
-    n = len(train_X)
+    # size of inputs [n, s] = [num_samples, max_seq_len]
+    n, s = train_X.shape
+
+    # dimensionality of the word embeddings
     d = 64
 
+    # dimensionality of the output (num classes)
     K = len(np.unique(train_Y))
 
     # for collecting error values
@@ -62,31 +66,32 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
-    num_maps = 100
-    flat_dim = num_maps * 3
-    latent_dim = 50
 
     """ runtime parameters """
-    num_iter = 1000
+    num_iter = 2000
     plot_per = 100
-    batch_size = 8
+    batch_size = 32
     plot = 1
 
     """ model parameters """
+    num_maps = 100
+    flat_dim = num_maps * 3
+    latent_dim = 300
     emb_dims = [vocab_len, d]
     filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
     fc_dims = [latent_dim, K]
 
     """ tensorflow ops """
-    # dropout probability
+    # keep probability for dropout layers
     keep_prob = tf.placeholder(tf.float32)
 
-    # shape [batch_size, max_seq_len]
+    # placeholder for inputs [batch_size, max_seq_len]
     inputs = tf.placeholder(tf.int32, [None, None])
 
-    # shape [batch_size, max_seq_len]
+    # placeholder for targets [batch_size, num_classes]
     targets = tf.placeholder(tf.float32, [None, K])
 
+    # initialize the model
     model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
                 targets, NULL_IDX, kp=keep_prob, eta=eta)
 
@@ -172,6 +177,6 @@ if __name__ == '__main__':
     y = np.loadtxt('loss.csv', delimiter=',')
 
     if plot:
-        #plt.plot(y)
-        plt.plot(range(len(E)), E)
+        plt.plot(y)
+        #plt.plot(range(len(E)), E)
         plt.show()
