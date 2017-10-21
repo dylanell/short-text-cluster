@@ -74,11 +74,11 @@ def docs2Bow(texts, dictionary):
             X[i, idx] = val
 
     # log normalize the vectors
-    for i in range(n):
-        x = X[None, i, :]
-        x = np.log(1 + x)
-        x = x/np.max(x)
-        X[i, :] = x
+    #for i in range(n):
+    #    x = X[None, i, :]
+    #    x = np.log(1 + x)
+    #    x = x/np.max(x)
+    #    X[i, :] = x
 
     return X
 
