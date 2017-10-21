@@ -40,6 +40,7 @@ def embedPCA(X, l=2, binary=False):
 
     return Y
 
+"""
 # create projections of samples in X using locality-pereserving-constraints
 # (LPP) in R^l
 # src: https://papers.nips.cc/paper/2359-locality-preserving-projections.pdf
@@ -109,7 +110,7 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False, batch_size=1000):
     Ne = 1 * ((Ne.T + Ne) > 0)
 
     if (metric != 'cosine'):
-        W = np.exp(-1 * PW / t) * Ne
+        W = np.exp(-1 * (PW**2) / t) * Ne
     else:
         W = (PW + 1)/2
 
@@ -139,6 +140,71 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False, batch_size=1000):
 
     # project X to new space in R^l
     Y = np.matmul(X, np.matmul(W_pca, W_lpp))
+
+    if(binary):
+        # get the median of each projected sample
+        median = np.median(Y, axis=1).reshape((Y.shape[0], 1))
+
+        # if the element of a sample is greater than its median, it becomes 1,
+        # otherwise it is 0
+        Y = 1*((Y - median) >= 0)
+
+    return Y
+"""
+
+def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False):
+    # get number of samples 'm'
+    n = X.shape[0]
+    d = np.prod(X.shape[1:])
+
+    # make X 2D by flattening all axis other than axis 0
+    X = X.reshape((-1, d))
+
+    Y = np.zeros((n, l))
+    Ne = np.zeros((n, n))
+
+    from sklearn import metrics
+    try:
+        PW = metrics.pairwise.pairwise_distances(X, metric=metric)
+    except:
+        print('unknown distance metric: %s, using default' % metric)
+        PW = metrics.pairwise.pairwise_distances(X, metric='cosine')
+
+    # find  k nearest for each row
+    for i in range(n):
+        order = np.argsort(PW[i, :])
+        if (metric=='cosine'):
+            k_nearest = order[::-1][1:k+1]
+        else:
+            k_nearest = order[1:k+1]
+            Ne[i, k_nearest] = 1
+
+    # N = 1 if i is j's neighbor or j is i's neighbor
+    Ne = 1 * ((Ne.T + Ne) > 0)
+
+    if (metric != 'cosine'):
+        W = np.exp(-1 * (PW**2) / t) * Ne
+    else:
+        W = PW * Ne
+
+    # create a diagonal matrix from the weights
+    D = np.diag(np.sum(W, axis=0))
+
+    # create a laplacian matrix
+    L = D - W
+
+    # generalized eigenval equation now: Ma = lam * Na
+    lam, v = linalg.eigh(L, b=D)
+
+    order = np.argsort(lam)
+
+    print order
+
+    bot_l = order[:l]
+
+    Y = v[:, bot_l]
+
+    print Y.shape
 
     if(binary):
         # get the median of each projected sample

@@ -11,8 +11,8 @@ if __name__ == '__main__':
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
 
 
-    #X = np.loadtxt('datasets/q-type/test_sentvec.dat', delimiter=' ')
-    X = np.loadtxt('train_latent.dat', delimiter=' ')
+    X = np.loadtxt('datasets/q-type/train_lnbow.dat', delimiter=' ')
+    #X = np.loadtxt('train_latent.dat', delimiter=' ')
     L = np.loadtxt('datasets/q-type/train_label.dat',
                     delimiter=' ').astype(np.int32)
 
@@ -40,12 +40,15 @@ if __name__ == '__main__':
 
     num_samples = X.shape[0]
 
-    Y = du.embedPCA(X, l=2, binary=False)
+    #Y = du.embedPCA(X, l=2, binary=False)
 
     #Y = du.embedTSNE(X, l=2, binary=False)
 
-    #Y = du.embedLPP(X, k=10, t=1e0, l=2, metric='l2',
-    #                binary=False, batch_size=2000)
+    Y = du.embedLPP(X, k=10, t=2e0, l=50, metric='l2', binary=True)
+
+    np.savetxt('train_hash.dat', Y)
+
+    Y = du.embedPCA(Y, l=2, binary=False)
 
     #Y = tu.docs2LPP(X, T, embed_dir, k=10, t=1e0, l=2,
     #                binary=False, batch_size=1000)
