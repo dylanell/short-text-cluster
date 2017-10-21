@@ -66,7 +66,7 @@ if __name__ == '__main__':
     del train_X
     del test_X
 
-    print('converting to log-normalized bag-of-words')
+    print('converting to bag-of-words')
     # convert stackoverflow data to bag of words vectors
     train_X, train_Y, test_X, test_Y = stk2Bow(sample_fp, label_fp,
                                                  sw_fp, prune_dict=vocab_size)
@@ -128,6 +128,7 @@ if __name__ == '__main__':
     # close the stopwords file
     sw_fp.close()
 
+    """
     print('converting to LPP')
     train_X_fn = out_dir + 'train_sentvec.dat'
     train_L_fn = out_dir + 'train_label.dat'
@@ -146,6 +147,7 @@ if __name__ == '__main__':
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_lpp.dat', train_X)
     np.savetxt(out_dir + 'test_lpp.dat', test_X)
+    """
 
 
 
