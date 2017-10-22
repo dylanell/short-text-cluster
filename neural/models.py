@@ -9,7 +9,7 @@ def validateType(out_type):
 # two layer ff neural network that takes input from summed word embeddings
 class NBOW(object):
     def __init__(self, emb_dims, dims, inputs, targets, null_word,
-                 kp=1.0, eta=1e-3):
+                 kp=1.0, eta=1e-3, out_type='softmax'):
         # get arguments
         vocab_len, d = emb_dims
         latent_dim, K = dims
@@ -46,18 +46,34 @@ class NBOW(object):
         logits = tf.contrib.layers.fully_connected(dropout, K,
                                                  activation_fn=None)
 
-        self._prediction = tf.argmax(logits, axis=1)
+        if (out_type=='sigmoid'):
+            self._prediction = tf.nn.sigmoid(logits)
 
-        # define the loss
-        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            labels=targets,
-            logits=logits,
-        )
-        self._error = tf.reduce_mean(stepwise_cross_entropy)
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
 
-        # define the optimizer
-        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
 
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        elif (out_type=='tanh'):
+            self._prediction = tf.nn.tanh(logits)
+
+            self._error = tf.reduce_mean((self._prediction - targets)**2)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        else:
+            self._prediction = tf.argmax(logits, axis=1)
+
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
+
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
 
     @property
     def predict(self):
@@ -82,7 +98,7 @@ class NBOW(object):
 
 class LSTM(object):
     def __init__(self, emb_dims, dims, inputs, targets, null_word,
-                 kp=1.0, eta=1e-3):
+                 kp=1.0, eta=1e-3, out_type='softmax'):
         # get arguments
         vocab_len, d = emb_dims
         latent_dim, K = dims
@@ -124,18 +140,34 @@ class LSTM(object):
         logits = tf.contrib.layers.fully_connected(dropout, K,
                                                  activation_fn=None)
 
-        self._prediction = tf.argmax(logits, axis=1)
+        if (out_type=='sigmoid'):
+            self._prediction = tf.nn.sigmoid(logits)
 
-        # loss function
-        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            labels=targets,
-            logits=logits,
-        )
-        self._error = tf.reduce_mean(stepwise_cross_entropy)
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
 
-        # define the optimizer
-        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
 
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        elif (out_type=='tanh'):
+            self._prediction = tf.nn.tanh(logits)
+
+            self._error = tf.reduce_mean((self._prediction - targets)**2)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        else:
+            self._prediction = tf.argmax(logits, axis=1)
+
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
+
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
 
     @property
     def predict(self):
@@ -155,8 +187,8 @@ class LSTM(object):
 
 
 class DynamicCNN(object):
-    def __init__(self, emb_dims, filt_dims, fc_dims, inputs,
-                 targets, null_word, k_top_v=3, kp=1.0, eta=1e-3):
+    def __init__(self, emb_dims, filt_dims, fc_dims, inputs, targets,
+                 null_word, k_top_v=3, kp=1.0, eta=1e-3, out_type='softmax'):
 
         vocab_len, d = emb_dims
         latent_dim, K = fc_dims
@@ -291,17 +323,34 @@ class DynamicCNN(object):
         logits = tf.contrib.layers.fully_connected(dropout2, K,
                                                  activation_fn=None)
 
-        self._prediction = tf.argmax(logits, axis=1)
+        if (out_type=='sigmoid'):
+            self._prediction = tf.nn.sigmoid(logits)
 
-        # define the loss
-        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            labels=targets,
-            logits=logits,
-        )
-        self._error = tf.reduce_mean(stepwise_cross_entropy)
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
 
-        # define the optimizer
-        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        elif (out_type=='tanh'):
+            self._prediction = tf.nn.tanh(logits)
+
+            self._error = tf.reduce_mean((self._prediction - targets)**2)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        else:
+            self._prediction = tf.argmax(logits, axis=1)
+
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
+
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
 
     @property
     def predict(self):
@@ -326,7 +375,7 @@ class DynamicCNN(object):
 
 class TextCNN(object):
     def __init__(self, emb_dims, filt_dims, fc_dims, inputs,
-                 targets, null_word, kp=1.0, eta=1e-3):
+                 targets, null_word, kp=1.0, eta=1e-3, out_type='softmax'):
 
         vocab_len, d = emb_dims
         latent_dim, K = fc_dims
@@ -463,17 +512,34 @@ class TextCNN(object):
         logits = tf.contrib.layers.fully_connected(dropout2, K,
                                                  activation_fn=None)
 
-        self._prediction = tf.argmax(logits, axis=1)
+        if (out_type=='sigmoid'):
+            self._prediction = tf.nn.sigmoid(logits)
 
-        # define the loss
-        stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-            labels=targets,
-            logits=logits,
-        )
-        self._error = tf.reduce_mean(stepwise_cross_entropy)
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
 
-        # define the optimizer
-        self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        elif (out_type=='tanh'):
+            self._prediction = tf.nn.tanh(logits)
+
+            self._error = tf.reduce_mean((self._prediction - targets)**2)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
+        else:
+            self._prediction = tf.argmax(logits, axis=1)
+
+            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+                labels=targets,
+                logits=logits,
+            )
+
+            self._error = tf.reduce_mean(stepwise_cross_entropy)
+
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(self._error)
 
     @property
     def predict(self):

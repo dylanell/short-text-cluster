@@ -104,11 +104,11 @@ if __name__ == '__main__':
     if (model_type=='nbow'):
         dims = [latent_dim, K]
         model = NBOW(emb_dims, dims, inputs, targets,
-                     NULL_IDX, kp=keep_prob, eta=eta)
+                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
     elif (model_type=='lstm'):
         dims = [latent_dim, K]
         model = LSTM(emb_dims, dims, inputs, targets,
-                     NULL_IDX, kp=keep_prob, eta=eta)
+                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
     elif (model_type=='tcnn'):
         num_maps = 100
         flat_dim = num_maps * 3
@@ -116,13 +116,15 @@ if __name__ == '__main__':
         filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
         fc_dims = [latent_dim, K]
         model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
-                    targets, NULL_IDX, kp=keep_prob, eta=eta)
+                    targets, NULL_IDX, kp=keep_prob, eta=eta,
+                    out_type='softmax')
     elif (model_type=='dcnn'):
         k_top_v = 4
         filt_dims = [[7, 20], [5, 14]]
         fc_dims = [latent_dim, K]
         model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
-                    targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob, eta=eta)
+                    targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,
+                    eta=eta, out_type='softmax')
     else:
         print('model \'%s\' is not valid' % model_type)
 
