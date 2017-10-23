@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
     """ runtime parameters """
     num_iter = 2000
-    plot_per = 100
+    plot_per = 50
     batch_size = 32
     plot = 1
 
