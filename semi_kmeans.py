@@ -54,14 +54,16 @@ def getSeed(labeled_X, labeled_Y):
 def assignClusters(FX, MU):
     n, d = FX.shape
 
-    R = np.zeros((n))
+    K = MU.shape[0]
+
+    R = np.zeros((n, K))
 
     for i in range(n):
         # calculate the distance from every centroid
         dist = np.linalg.norm(FX[None, i, :] - MU, axis=1)
 
         # assign label from closest centroid
-        R[i] = np.argmin(dist)
+        R[i, np.argmin(dist)] = 1
 
     return R
 
@@ -77,6 +79,9 @@ def mapping(T, L, X):
     K = classes.shape[0]
 
     C = np.zeros((K, K))
+
+    # convert L from one hot to numerical labels
+    L = np.argmax(L, axis=1)
 
     for i in range(K):
         for j in range(K):
@@ -294,7 +299,7 @@ if __name__ == '__main__':
             print 'R', R.shape
 
             # get the dissagrement cost (C) between the assignent R and label
-            G = mapping(R[:l], labeled_Y, labeled_X)
+            G = mapping(labeled_Y, R[:l], labeled_X)
 
             print 'G', G
 
