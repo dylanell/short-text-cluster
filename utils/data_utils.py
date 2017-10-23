@@ -28,7 +28,7 @@ def embedTSNE(X, l=2, binary=False):
 
 def embedPCA(X, l=2, binary=False):
     from sklearn.decomposition import PCA
-    Y = PCA(n_components=2).fit_transform(X)
+    Y = PCA(n_components=l).fit_transform(X)
 
     if(binary):
         # get the median of each projected sample
@@ -160,6 +160,19 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False):
     # make X 2D by flattening all axis other than axis 0
     X = X.reshape((-1, d))
 
+    #print X.shape
+
+    # if the dimensionality of X (d) is greater than the number of samples (n),
+    # we must project X to a new space in which d <= n
+    # src: Locality Preserving Indexing for Document Representation
+    if (n < d):
+        print('\t>> not enough samples; projecting to dimension %d' % n)
+        X = embedPCA(X, l=5000, binary=False)
+
+    #print X.shape
+
+    print('\t>> generating lpp hashes')
+
     Y = np.zeros((n, l))
     Ne = np.zeros((n, n))
 
@@ -167,7 +180,7 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False):
     try:
         PW = metrics.pairwise.pairwise_distances(X, metric=metric)
     except:
-        print('unknown distance metric: %s, using default' % metric)
+        print('\t>> unknown distance metric: %s, using default' % metric)
         PW = metrics.pairwise.pairwise_distances(X, metric='cosine')
 
     # find  k nearest for each row
@@ -183,6 +196,7 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False):
     Ne = 1 * ((Ne.T + Ne) > 0)
 
     if (metric != 'cosine'):
+        print('\t>> not cosine')
         W = np.exp(-1 * (PW**2) / t) * Ne
     else:
         W = PW * Ne
@@ -198,13 +212,9 @@ def embedLPP(X, k=5, t=1e0, l=2, metric='l2', binary=False):
 
     order = np.argsort(lam)
 
-    print order
-
     bot_l = order[:l]
 
     Y = v[:, bot_l]
-
-    print Y.shape
 
     if(binary):
         # get the median of each projected sample
