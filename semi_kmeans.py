@@ -51,7 +51,7 @@ def getSeed(labeled_X, labeled_Y):
 
     return seed_X
 
-def assignClusters(FX, MU):
+def updateClusters(FX, MU):
     n, d = FX.shape
 
     K = MU.shape[0]
@@ -74,6 +74,8 @@ def arrayRowIntersection(a,b):
 
 # uses scikit learn to solve the minimum assignment problem to construct
 # an optimal mapping from true labels T to current labels L
+# "for each truth label, what is the equivalent label in our cluster labels?"
+# this is what mapping G(.) does. cluster_label = G(truth_label)
 def mapping(T, L, X):
     classes = np.unique(labeled_Y)
     K = classes.shape[0]
@@ -82,6 +84,8 @@ def mapping(T, L, X):
 
     # convert L from one hot to numerical labels
     L = np.argmax(L, axis=1)
+
+    n = T.shape[0]
 
     for i in range(K):
         for j in range(K):
@@ -101,7 +105,94 @@ def mapping(T, L, X):
     # solve the linear assignment problem on C with scipy
     G = scipy.optimize.linear_sum_assignment(C)
 
-    return G[-1]
+    # map each truth label in T to the correspondng cluster label in mapped_T
+    mapped_T = np.zeros_like(T)
+
+    for i in range(n):
+        mapped_T[i] = G[-1][int(T[i])]
+
+    return mapped_T, G[-1]
+
+
+# updates centroids using eq. 5 using labeled and unlabeled data
+def updateCentroids(MU, FX, R, mapped_Y, alpha, margin):
+    L = mapped_Y.shape[0]
+
+    N, d = FX.shape
+
+    K = MU.shape[0]
+
+    W = np.zeros((L, K))
+
+    # for each column of W (k) and row of W (n) W -> LxK
+    for k in range(K):
+        for n in range(L):
+            # get the mapped label for labeled sample n
+            gn = int(mapped_Y[n])
+
+            # create an iterator for all labels other than gn
+            not_gn = [g for g in range(K) if g != gn]
+
+            # distance from sample fxn to centroid gn
+            fxn = FX[None, n, :]
+            mugn = MU[None, gn, :]
+            fxn_to_mugn = np.linalg.norm(fxn - mugn)**2
+
+            # indicator that class k is equal to gn
+            I_prime_nk = delta(k, gn)
+
+            # intiailize sums to calculate over all labels != gn
+            sum_I_dprime_nkj = 0
+            sum_I_tprime_nkj = 0
+
+            # iterate through labels other than gn to get sums for
+            # I_tprime_nkj, I_dprime_nkj
+            for j in not_gn:
+                # distance from sample fxn to centroid j
+                muj = MU[None, j, :]
+                fxn_to_muj = np.linalg.norm(fxn - muj)**2
+
+                # indicator if distance to centroid j is less than distance
+                # to centroid gn plus the margin
+                d_prime_nj = delta(margin + fxn_to_mugn - fxn_to_muj)
+
+                sum_I_dprime_nkj += delta(k, j) * d_prime_nj
+                sum_I_tprime_nkj += (1 - delta(k, j)) * d_prime_nj
+
+            # calculate W[n, k]
+            W[n, k] = (1 - alpha) * (I_prime_nk +
+                                     sum_I_dprime_nkj -
+                                     sum_I_tprime_nkj)
+
+        # build terms of the equation for muk
+        # top right term of eq. (5)
+        top_right = np.matmul(W[:, k, None].T, FX[:l, :])
+
+        # bottom right term of eq. (5)
+        bot_right = np.sum(W[:, k, None])
+
+        # top left term of eq. (5)
+        top_left = alpha * np.matmul(R[:, k, None].T, FX)
+
+        # bottom left term of eq. (5)
+        bot_left = alpha * np.sum(R[:, k, None])
+
+        # calculate the updated centroid k
+        muk = (top_left + top_right) / (bot_left + bot_right)
+
+        # update kth row of MU with this new centroid
+        MU[k, :] = muk
+
+    return MU
+
+# hybrid delta function
+# outputs 1 if a == b or outputs 1 if a > 0
+def delta(a, b=None):
+    if b is not None:
+        return 1 * (a == b)
+    else:
+        return 1 * (a > 0)
+
 
 
 # TODO: ensure we get all classes in both splits
@@ -153,6 +244,7 @@ if __name__ == '__main__':
 
     # split into labeled and unlabeled sets and ensure we have a sample
     # from every class in each
+    # fist l samples of train_X are the labeled ones
     while True:
         # grab a "batch" of data the entire size of data to shuffle samples
         # with labels
@@ -177,10 +269,12 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
+    alpha = 0.1
+    margin = 2
 
     """ runtime parameters """
     num_iter = 1000
-    pretrain_iter = 1000
+    pretrain_iter = 200
     plot_per = 10
     batch_size = 32
     plot = 0
@@ -293,21 +387,23 @@ if __name__ == '__main__':
 
             print 'FX', FX.shape
 
-            # populate R by assigning current labels to the data
-            R = assignClusters(FX, MU)
+            # update R by assigning current labels to the data
+            R = updateClusters(FX, MU)
 
             print 'R', R.shape
 
-            # get the dissagrement cost (C) between the assignent R and label
-            G = mapping(labeled_Y, R[:l], labeled_X)
+            # map truth labels to labels in our clustering
+            mapped_Y, G = mapping(labeled_Y, R[:l], labeled_X)
 
             print 'G', G
 
-            # NOTE
-            exit()
-
             """ minimize J by changing MU (f(x) and R constant) """
-            # TODO
+            # update MU by computing new centroids
+            MU = updateCentroids(MU, FX, R, mapped_Y, alpha, margin)
+
+            print 'MU', MU.shape
+
+            exit()
 
             """ minimize J by changing f(x) (MU and R constant) """
             # TODO
