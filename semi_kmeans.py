@@ -51,7 +51,7 @@ def getSeed(labeled_X, labeled_Y):
 
     return seed_X
 
-def updateClusters(FX, MU):
+def updateAssignments(FX, MU):
     n, d = FX.shape
 
     K = MU.shape[0]
@@ -388,7 +388,7 @@ if __name__ == '__main__':
             print 'FX', FX.shape
 
             # update R by assigning current labels to the data
-            R = updateClusters(FX, MU)
+            R = updateAssignments(FX, MU)
 
             print 'R', R.shape
 
