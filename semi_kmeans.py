@@ -17,6 +17,8 @@ import pickle
 import time
 import gensim
 
+import scipy
+
 from utils.data_utils import getBatch
 from utils.data_utils import label2OneHot
 
@@ -48,6 +50,53 @@ def getSeed(labeled_X, labeled_Y):
                 break
 
     return seed_X
+
+def assignClusters(FX, MU):
+    n, d = FX.shape
+
+    R = np.zeros((n))
+
+    for i in range(n):
+        # calculate the distance from every centroid
+        dist = np.linalg.norm(FX[None, i, :] - MU, axis=1)
+
+        # assign label from closest centroid
+        R[i] = np.argmin(dist)
+
+    return R
+
+# src: https://stackoverflow.com/questions/8317022/get-intersecting-rows-across-two-2d-numpy-arrays
+def arrayRowIntersection(a,b):
+   tmp=np.prod(np.swapaxes(a[:,:,None],1,2)==b,axis=2)
+   return a[np.sum(np.cumsum(tmp,axis=0)*tmp==1,axis=1).astype(bool)]
+
+# uses scikit learn to solve the minimum assignment problem to construct
+# an optimal mapping from true labels T to current labels L
+def mapping(T, L, X):
+    classes = np.unique(labeled_Y)
+    K = classes.shape[0]
+
+    C = np.zeros((K, K))
+
+    for i in range(K):
+        for j in range(K):
+            Xi = X[np.where(T == i)]
+            Xj = X[np.where(L == j)]
+
+            Xi_and_Xj = arrayRowIntersection(Xi, Xj)
+
+            len_Xi = Xi.shape[0]
+            len_Xj = Xj.shape[0]
+            len_Xi_and_Xj = Xi_and_Xj.shape[0]
+
+            dis = len_Xi + len_Xj - 2*(len_Xi_and_Xj)
+
+            C[i, j] = dis
+
+    # solve the linear assignment problem on C with scipy
+    G = scipy.optimize.linear_sum_assignment(C)
+
+    return G[-1]
 
 
 # TODO: ensure we get all classes in both splits
@@ -217,7 +266,7 @@ if __name__ == '__main__':
             inst_E.append(sess.run(model.loss, test_feed))
         print('Pretrain Error: %f' % np.mean(inst_E))
 
-        """ cluster with kmeans objective """
+        """ minimize J by changing R (f(x) and MU constant) """
         # get a seed batch from the labeled data from each class
         seed_X = getSeed(labeled_X, labeled_Y)
         seed_feed = {inputs: seed_X, keep_prob: 1.0}
@@ -226,11 +275,30 @@ if __name__ == '__main__':
         # initialized cluster centroids
         MU = sess.run(model.encode, seed_feed)
 
+        print 'MU', MU.shape
+
+        # encode all points
+        FX = np.zeros((n, latent_dim))
+        for i in range(n):
+            encode_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
+            FX[i, :] = sess.run(model.encode, encode_feed)
+
+        print 'FX', FX.shape
+
         # initialize R by assigning current labels to the data
-        #R = assignClusters(train_X)
+        R = assignClusters(FX, MU)
+
+        print 'R', R.shape
+
+        # get the dissagrement cost (C) between the assignent R and label
+        G = mapping(R[:l], labeled_Y, labeled_X)
+
+        print 'G', G
+
+        exit()
 
         inst_E = []
-        for i in range(pretrain_iter):
+        for i in range(num_iter):
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
