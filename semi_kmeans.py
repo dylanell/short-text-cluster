@@ -266,7 +266,7 @@ if __name__ == '__main__':
             inst_E.append(sess.run(model.loss, test_feed))
         print('Pretrain Error: %f' % np.mean(inst_E))
 
-        """ minimize J by changing R (f(x) and MU constant) """
+        """ intiailize cluster centroids with pretrained encodings """
         # get a seed batch from the labeled data from each class
         seed_X = getSeed(labeled_X, labeled_Y)
         seed_feed = {inputs: seed_X, keep_prob: 1.0}
@@ -277,28 +277,35 @@ if __name__ == '__main__':
 
         print 'MU', MU.shape
 
-        # encode all points
-        FX = np.zeros((n, latent_dim))
-        for i in range(n):
-            encode_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
-            FX[i, :] = sess.run(model.encode, encode_feed)
-
-        print 'FX', FX.shape
-
-        # initialize R by assigning current labels to the data
-        R = assignClusters(FX, MU)
-
-        print 'R', R.shape
-
-        # get the dissagrement cost (C) between the assignent R and label
-        G = mapping(R[:l], labeled_Y, labeled_X)
-
-        print 'G', G
-
-        exit()
-
         inst_E = []
         for i in range(num_iter):
+            """ minimize J by changing R (f(x) and MU constant) """
+            # encode all points
+            FX = np.zeros((n, latent_dim))
+            for i in range(n):
+                encode_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
+                FX[i, :] = sess.run(model.encode, encode_feed)
+
+            print 'FX', FX.shape
+
+            # populate R by assigning current labels to the data
+            R = assignClusters(FX, MU)
+
+            print 'R', R.shape
+
+            # get the dissagrement cost (C) between the assignent R and label
+            G = mapping(R[:l], labeled_Y, labeled_X)
+
+            print 'G', G
+
+            # NOTE
+            exit()
+
+            """ minimize J by changing MU (f(x) and R constant) """
+            # TODO
+
+            """ minimize J by changing f(x) (MU and R constant) """
+            # TODO
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
