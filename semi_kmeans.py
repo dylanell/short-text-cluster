@@ -194,8 +194,6 @@ def delta(a, b=None):
         return 1 * (a > 0)
 
 
-
-# TODO: ensure we get all classes in both splits
 if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 5):
@@ -218,6 +216,9 @@ if __name__ == '__main__':
 
     # dimension of the learned embedding
     latent_dim = int(sys.argv[4])
+
+    print('Num Labeled: %d' % l)
+    print('Embed Dim: %d' % latent_dim)
 
     vocab = gensim.corpora.Dictionary.load(data_dir + 'vocabulary.dat')
     vocab_len = len(vocab)
@@ -321,17 +322,23 @@ if __name__ == '__main__':
         print('model \'%s\' is not valid' % model_type)
 
 
-    #external_loss = tf.zeros([1])
+    # placeholders for netrok loss
+    MU_tf = tf.placeholder(tf.float32, [K, latent_dim])
+
+    R_tf = tf.placeholder(tf.float32, [n, K])
+
+    mapped_Y_tf = tf.placeholder(tf.float32, [l, 1])
+
+    # TODO: build loss for external optimizer (only variable are network params)
+    FX_stack = tf.stack([model.encode for z in range(K)], axis=2)
+    MU_stack = tf.stack([tf.transpose(MU_tf) for z in range(n)], axis=0)
+    S = FX_stack - MU_stack
+    S_norm = tf.pow(tf.norm(S, axis=1), 2)
+    term1 = tf.reduce_sum(tf.diag_part(tf.matmul(S_norm, tf.transpose(R_tf))))
 
     #external_optimize = #tf.train.AdamOptimizer(learning_rate=eta).minimize(external_loss)
 
     init = tf.global_variables_initializer()
-
-    """ kmeans parameters """
-    # TODO: use kmeans++
-    MU = np.random.uniform(-10, 10, (K, latent_dim))
-
-    R = np.zeros((n, K))
 
     """ Tensorflow Session """
     with tf.Session() as sess:
@@ -380,10 +387,8 @@ if __name__ == '__main__':
         for i in range(num_iter):
             """ minimize J by changing R (f(x) and MU constant) """
             # encode all points
-            FX = np.zeros((n, latent_dim))
-            for i in range(n):
-                encode_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
-                FX[i, :] = sess.run(model.encode, encode_feed)
+            encode_feed = {inputs: train_X, keep_prob: 1.0}
+            FX = sess.run(model.encode, encode_feed)
 
             print 'FX', FX.shape
 
@@ -403,10 +408,16 @@ if __name__ == '__main__':
 
             print 'MU', MU.shape
 
-            exit()
-
             """ minimize J by changing f(x) (MU and R constant) """
-            # TODO
+            train_feed = {inputs: train_X,
+                          MU_tf: MU,
+                          R_tf: R,
+                          mapped_Y_tf: mapped_Y,
+                          keep_prob: 0.5}
+
+            # TODO: run external optimizer here to update network params
+
+            exit()
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
