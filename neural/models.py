@@ -49,7 +49,7 @@ class NBOW(object):
         if (out_type=='sigmoid'):
             self._prediction = tf.nn.sigmoid(logits)
 
-            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            stepwise_cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
                 labels=targets,
                 logits=logits,
             )
@@ -143,7 +143,7 @@ class LSTM(object):
         if (out_type=='sigmoid'):
             self._prediction = tf.nn.sigmoid(logits)
 
-            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            stepwise_cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
                 labels=targets,
                 logits=logits,
             )
@@ -326,7 +326,7 @@ class DynamicCNN(object):
         if (out_type=='sigmoid'):
             self._prediction = tf.nn.sigmoid(logits)
 
-            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            stepwise_cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
                 labels=targets,
                 logits=logits,
             )
@@ -515,7 +515,7 @@ class TextCNN(object):
         if (out_type=='sigmoid'):
             self._prediction = tf.nn.sigmoid(logits)
 
-            stepwise_cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
+            stepwise_cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
                 labels=targets,
                 logits=logits,
             )
