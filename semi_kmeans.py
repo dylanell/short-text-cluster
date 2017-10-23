@@ -334,7 +334,7 @@ if __name__ == '__main__':
     MU_stack = tf.stack([tf.transpose(MU_tf) for z in range(n)], axis=0)
     S = FX_stack - MU_stack
     S_norm = tf.pow(tf.norm(S, axis=1), 2)
-    term1 = tf.reduce_sum(tf.diag_part(tf.matmul(S_norm, tf.transpose(R_tf))))
+    term1 = alpha * tf.reduce_sum(tf.diag_part(tf.matmul(S_norm, tf.transpose(R_tf))))
 
     #external_optimize = #tf.train.AdamOptimizer(learning_rate=eta).minimize(external_loss)
 
