@@ -270,15 +270,15 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
-    alpha = 0.1
-    margin = 2
+    alpha = 0.001 # lower alpha ->
+    margin = 5
 
     """ runtime parameters """
-    num_iter = 1000
-    pretrain_iter = 200
-    plot_per = 10
+    num_iter = 100
+    pretrain_iter = 500
+    plot_per = 1
     batch_size = 32
-    plot = 0
+    plot = 1
 
     """ model parameters """
     emb_dims = [vocab_len, d]
@@ -324,19 +324,40 @@ if __name__ == '__main__':
 
     # placeholders for netrok loss
     MU_tf = tf.placeholder(tf.float32, [K, latent_dim])
-
     R_tf = tf.placeholder(tf.float32, [n, K])
-
-    mapped_Y_tf = tf.placeholder(tf.float32, [l, 1])
+    mapped_Y_tf = tf.placeholder(tf.int32, [l])
 
     # TODO: build loss for external optimizer (only variable are network params)
     FX_stack = tf.stack([model.encode for z in range(K)], axis=2)
     MU_stack = tf.stack([tf.transpose(MU_tf) for z in range(n)], axis=0)
     S = FX_stack - MU_stack
-    S_norm = tf.pow(tf.norm(S, axis=1), 2)
-    term1 = alpha * tf.reduce_sum(tf.diag_part(tf.matmul(S_norm, tf.transpose(R_tf))))
+    S_norm = tf.pow(tf.norm(S, axis=1), 2) # S_norm[n, k] = ||f(s_n) - mu_k||^2
 
-    #external_optimize = #tf.train.AdamOptimizer(learning_rate=eta).minimize(external_loss)
+    # get term 1 from J loss eq. (4)
+    #term1 = 1.0/(float(n)) * alpha * tf.reduce_sum(R_tf * S_norm)
+    term1 = alpha * tf.reduce_sum(R_tf * S_norm)
+
+    L_norm = S_norm[:l, :]
+    map_OH = tf.cast(tf.one_hot(mapped_Y_tf, K), tf.float32)
+    correct_dist = L_norm * map_OH
+
+    correct_dist_vec = tf.reshape(tf.reduce_sum(correct_dist, axis=1), (l, 1))
+
+    not_map_OH = tf.cast(tf.equal(map_OH, 0.0), tf.float32)
+
+    error_dist = not_map_OH * (margin + correct_dist_vec - L_norm)
+
+    error_dist_hinge = tf.maximum(error_dist, 0.0)
+
+    error_dist_vec = tf.reshape(tf.reduce_sum(error_dist_hinge, axis=1), (l, 1))
+
+    # get term 2 from J loss eq. (4)
+    # term2 = 1.0/(float(l)) (1.0 - alpha) * tf.reduce_sum(correct_dist_vec + error_dist_vec)
+    term2 = (1.0 - alpha) * tf.reduce_sum(correct_dist_vec + error_dist_vec)
+
+    kmeans_loss = term1 + term2
+
+    extern_opt = tf.train.AdamOptimizer(learning_rate=eta).minimize(kmeans_loss)
 
     init = tf.global_variables_initializer()
 
@@ -356,11 +377,11 @@ if __name__ == '__main__':
             sess.run(model.optimize, train_feed)
 
             # report training progress
-            progress = int(float(i)/float(num_iter)*100.0)
+            progress = int(float(i)/float(pretrain_iter)*100.0)
             sys.stdout.write('\rPre-training: ' + str(progress) + '%')
             sys.stdout.flush()
 
-        sys.stdout.write('\rPre-training: 100%\n\n')
+        sys.stdout.write('\rPre-training: 100%\n')
         sys.stdout.flush()
 
         """ report pretrain error """
@@ -370,7 +391,7 @@ if __name__ == '__main__':
                          targets: labeled_OH[None, i, :],
                          keep_prob: 1.0}
             inst_E.append(sess.run(model.loss, test_feed))
-        print('Pretrain Error: %f' % np.mean(inst_E))
+        print('Pre-train Error: %f' % np.mean(inst_E))
 
         """ intiailize cluster centroids with pretrained encodings """
         # get a seed batch from the labeled data from each class
@@ -381,7 +402,7 @@ if __name__ == '__main__':
         # initialized cluster centroids
         MU = sess.run(model.encode, seed_feed)
 
-        print 'MU', MU.shape
+        #print 'MU', MU.shape
 
         inst_E = []
         for i in range(num_iter):
@@ -390,23 +411,23 @@ if __name__ == '__main__':
             encode_feed = {inputs: train_X, keep_prob: 1.0}
             FX = sess.run(model.encode, encode_feed)
 
-            print 'FX', FX.shape
+            #print 'FX', FX.shape
 
             # update R by assigning current labels to the data
             R = updateAssignments(FX, MU)
 
-            print 'R', R.shape
+            #print 'R', R.shape
 
             # map truth labels to labels in our clustering
             mapped_Y, G = mapping(labeled_Y, R[:l], labeled_X)
 
-            print 'G', G
+            #print 'G', G
 
             """ minimize J by changing MU (f(x) and R constant) """
             # update MU by computing new centroids
             MU = updateCentroids(MU, FX, R, mapped_Y, alpha, margin)
 
-            print 'MU', MU.shape
+            #print 'MU', MU.shape
 
             """ minimize J by changing f(x) (MU and R constant) """
             train_feed = {inputs: train_X,
@@ -415,16 +436,34 @@ if __name__ == '__main__':
                           mapped_Y_tf: mapped_Y,
                           keep_prob: 0.5}
 
-            # TODO: run external optimizer here to update network params
+            # run the optimizer
+            sess.run(extern_opt, train_feed)
 
-            exit()
+            # colelct the current loss
+            e = sess.run(kmeans_loss, train_feed)
+            inst_E.append(e)
+            #print e
+
+            # if we have hit a plotting period and we are in plotting
+            # mode, calculate the current batch loss and append to
+            # a growing list of loss values
+            if (plot and (i % plot_per == 0) and i != 0):
+                # report the average value of the loss function over the set
+                # of iterations isince the last plotting period
+                e = np.mean(inst_E)
+                E.append(e)
+                inst_E = []
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
             sys.stdout.write('\rTraining: ' + str(progress) + '%')
             sys.stdout.flush()
 
-        sys.stdout.write('\rTraining: 100%\n\n')
+        sys.stdout.write('\rTraining: 100%\n')
         sys.stdout.flush()
 
         sess.close()
+
+    if plot:
+        plt.plot(range(len(E)), E)
+        plt.savefig('loss.jpg')
