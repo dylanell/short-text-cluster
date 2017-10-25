@@ -131,7 +131,7 @@ if __name__ == '__main__':
     sw_fp.close()
 
     # save training sample hashes using LPP's
-    print('converting to binary hashes')
-    train_X = np.loadtxt(out_dir + 'train_bow.dat', delimiter=' ')
-    train_H = du.embedLPP(train_X, k=15, t=2e0, l=70, metric='l2', binary=True)
-    np.savetxt(out_dir + 'train_hash.dat', train_H)
+    #print('converting to binary hashes')
+    #train_X = np.loadtxt(out_dir + 'train_bow.dat', delimiter=' ')
+    #train_H = du.embedLPP(train_X, k=15, t=2e0, l=70, metric='l2', binary=True)
+    #np.savetxt(out_dir + 'train_hash.dat', train_H)

@@ -247,8 +247,8 @@ def stkSplit(sample_fp, label_fp):
         # separate the label and sample from the line
         label = int(' '.join(line.split()))
 
-        # append label to the label corpus
-        Y[i, :] = label
+        # append label to the label corpus (make 0 indexed)
+        Y[i, :] = label - 1
 
     # randomly shuffle the dataset with a constant seed so it is identical
     # every time
@@ -452,8 +452,8 @@ def agnewsSplit(train_fp, test_fp):
         # append sample to the sentences corpus
         train_X.append(sample)
 
-        # add label to train labels array
-        train_Y[i, 0] = label
+        # add label to train labels array (make llabel 0 indexed)
+        train_Y[i, 0] = label - 1
 
 
     # extract samples and labels from testing data
