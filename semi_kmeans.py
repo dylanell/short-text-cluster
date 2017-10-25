@@ -16,8 +16,10 @@ import matplotlib.pyplot as plt
 import pickle
 import time
 import gensim
-
 import scipy
+
+from sklearn import cluster
+from sklearn import metrics
 
 from utils.data_utils import getBatch
 from utils.data_utils import label2OneHot
@@ -243,6 +245,12 @@ if __name__ == '__main__':
     # for collecting error values
     E = []
 
+    orig_X = np.copy(train_X)
+    orig_Y = np.copy(train_Y)
+
+    # only use 5000 samples
+    n = min(n, 6000)
+
     # split into labeled and unlabeled sets and ensure we have a sample
     # from every class in each
     # fist l samples of train_X are the labeled ones
@@ -251,6 +259,7 @@ if __name__ == '__main__':
         # with labels
         train_X, train_Y, indices = getBatch(train_X, train_Y, n)
 
+        # choose l of these for the labeled samples
         labeled_X = train_X[:l]
         labeled_Y = train_Y[:l]
         labeled_OH = label2OneHot(np.reshape(labeled_Y,
@@ -269,13 +278,13 @@ if __name__ == '__main__':
 
 
     """ hyper parameters """
-    eta = 1e-3
+    eta = 1e-5
     alpha = 0.001 # lower alpha ->
     margin = 5
 
     """ runtime parameters """
-    num_iter = 100
-    pretrain_iter = 500
+    num_iter = 40000
+    pretrain_iter = 1000
     plot_per = 1
     batch_size = 32
     plot = 1
@@ -297,11 +306,11 @@ if __name__ == '__main__':
     if (model_type=='nbow'):
         dims = [latent_dim, K]
         model = NBOW(emb_dims, dims, inputs, targets,
-                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
+                     NULL_IDX, kp=keep_prob, eta=1e-3, out_type='softmax')
     elif (model_type=='lstm'):
         dims = [latent_dim, K]
         model = LSTM(emb_dims, dims, inputs, targets,
-                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
+                     NULL_IDX, kp=keep_prob, eta=1e-3, out_type='softmax')
     elif (model_type=='tcnn'):
         num_maps = 100
         flat_dim = num_maps * 3
@@ -309,7 +318,7 @@ if __name__ == '__main__':
         filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
         fc_dims = [latent_dim, K]
         model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
-                    targets, NULL_IDX, kp=keep_prob, eta=eta,
+                    targets, NULL_IDX, kp=keep_prob, eta=1e-3,
                     out_type='softmax')
     elif (model_type=='dcnn'):
         k_top_v = 4
@@ -317,7 +326,7 @@ if __name__ == '__main__':
         fc_dims = [latent_dim, K]
         model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,
-                    eta=eta, out_type='softmax')
+                    eta=1e-3, out_type='softmax')
     else:
         print('model \'%s\' is not valid' % model_type)
 
@@ -442,7 +451,6 @@ if __name__ == '__main__':
             # colelct the current loss
             e = sess.run(kmeans_loss, train_feed)
             inst_E.append(e)
-            #print e
 
             # if we have hit a plotting period and we are in plotting
             # mode, calculate the current batch loss and append to
@@ -453,6 +461,7 @@ if __name__ == '__main__':
                 e = np.mean(inst_E)
                 E.append(e)
                 inst_E = []
+                print e
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
@@ -462,8 +471,54 @@ if __name__ == '__main__':
         sys.stdout.write('\rTraining: 100%\n')
         sys.stdout.flush()
 
+        # array to hold encoded outputs
+        O = np.zeros((n, latent_dim))
+
+        # array to hold labels chosen
+        B = np.zeros((n))
+
+        for i in range(n):
+            test_feed = {inputs: orig_X[None, i, :], keep_prob: 1.0}
+
+            out = sess.run(model.encode, test_feed)
+
+            O[i, :] = out
+            B[i] = orig_Y[i]
+
+            # report training progress
+            progress = int(float(i)/float(n)*100.0)
+            sys.stdout.write('\rEncoding: ' + str(progress) + '%')
+            sys.stdout.flush()
+
+        sys.stdout.write('\rEncoding: 100%\n')
+        sys.stdout.flush()
+
+        np.savetxt('train_latent.dat', O)
+        np.savetxt('train_label.dat', B)
+
         sess.close()
 
+    # create a kmeans model
+    model = cluster.KMeans(n_clusters=K, init='k-means++',
+                           max_iter=300, n_init=100)
+
+    # cluster the latent states
+    Y_pred = model.fit_predict(O)
+
+    # get the NMI score of the clustering
+    score = metrics.normalized_mutual_info_score(B, Y_pred)
+
+    print('NMI Score: %.4f' % score)
+
+    # save loss values to a csv file
+    l_fp = open('loss.csv', 'w')
+    for e in E:
+        l_fp.write(str(e) + '\n')
+    l_fp.close()
+
+    y = np.loadtxt('loss.csv', delimiter=',')
+
     if plot:
+        #plt.plot(y)
         plt.plot(range(len(E)), E)
-        plt.savefig('loss.jpg')
+        plt.show()
