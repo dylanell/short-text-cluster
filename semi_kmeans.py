@@ -478,12 +478,12 @@ if __name__ == '__main__':
         B = np.zeros((n))
 
         for i in range(n):
-            test_feed = {inputs: orig_X[None, i, :], keep_prob: 1.0}
+            test_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
 
             out = sess.run(model.encode, test_feed)
 
             O[i, :] = out
-            B[i] = orig_Y[i]
+            B[i] = train_Y[i]
 
             # report training progress
             progress = int(float(i)/float(n)*100.0)
