@@ -13,30 +13,10 @@ if __name__ == '__main__':
 
     #X = np.loadtxt('datasets/q-type/train_bow.dat', delimiter=' ')
     X = np.loadtxt('train_latent.dat', delimiter=' ')
-    L = np.loadtxt('datasets/q-type/train_label.dat',
-                    delimiter=' ').astype(np.int32)
+    L = np.loadtxt('train_label.dat', delimiter=' ').astype(np.int32)
 
     with open('datasets/q-type/train_texts.dat', 'r') as fp:
         T = pickle.load(fp)
-
-
-    """
-    X = np.loadtxt('datasets/stk-ovflw/train_sentvec.dat', delimiter=' ')
-    L = np.loadtxt('datasets/stk-ovflw/train_label.dat',
-                    delimiter=' ').astype(np.int32)
-
-    with open('datasets/stk-ovflw/train_texts.dat', 'r') as fp:
-        T = pickle.load(fp)
-    """
-
-    """
-    X = np.loadtxt('datasets/ag-news/train_sentvec.dat', delimiter=' ')
-    L = np.loadtxt('datasets/ag-news/train_label.dat',
-                    delimiter=' ').astype(np.int32)
-
-    with open('datasets/ag-news/train_texts.dat', 'r') as fp:
-        T = pickle.load(fp)
-    """
 
     num_samples = X.shape[0]
 
@@ -61,6 +41,8 @@ if __name__ == '__main__':
     for i in range(num_samples):
         try:
             plt.scatter(Y[i, 0], Y[i, 1], color=colors[L[i]], s=3)
+            plt.title('TCNN Semi-Supervised 100-Dimensional Vectors\n NMI: 0.4703')
         except:
             plt.scatter(Y[i, 0], Y[i, 1], s=3)
+            plt.title('TCNN Semi-Supervised 100-Dimensional Vectors\n NMI: 0.4703')
     plt.show()
