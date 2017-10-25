@@ -40,7 +40,11 @@ if __name__ == '__main__':
 
     num_samples = X.shape[0]
 
+    print X.shape
+
     Y = du.embedPCA(X, l=2, binary=False)
+
+    print Y.shape
 
     #Y = du.embedTSNE(X, l=2, binary=False)
 
