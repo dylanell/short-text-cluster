@@ -245,9 +245,6 @@ if __name__ == '__main__':
     # for collecting error values
     E = []
 
-    orig_X = np.copy(train_X)
-    orig_Y = np.copy(train_Y)
-
     # only use 5000 samples
     n = min(n, 6000)
 
@@ -278,12 +275,12 @@ if __name__ == '__main__':
 
 
     """ hyper parameters """
-    eta = 1e-5
+    eta = 1e-3
     alpha = 0.001 # lower alpha ->
     margin = 5
 
     """ runtime parameters """
-    num_iter = 40000
+    num_iter = 400
     pretrain_iter = 1000
     plot_per = 1
     batch_size = 32
