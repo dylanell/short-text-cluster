@@ -87,7 +87,7 @@ if __name__ == '__main__':
     plot = 1
 
     """ model parameters """
-    latent_dim = 300
+    latent_dim = 100
     emb_dims = [vocab_len, d]
 
     """ tensorflow ops """
