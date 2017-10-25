@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # get the vocabulary (dictionary) size
     vocab_size = 20000
 
-    print('converting to filtered texts')
+    print('[INFO] encoding filtered texts')
     # convert stackoverflow data to bag of words vectors
     train_X, train_Y, test_X, test_Y = stk2Texts(sample_fp, label_fp, sw_fp)
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     del train_X
     del test_X
 
-    print('converting to bag-of-words')
+    print('[INFO] encoding bag-of-words')
     # convert stackoverflow data to bag of words vectors
     train_X, train_Y, test_X, test_Y = stk2Bow(sample_fp, label_fp,
                                                  sw_fp, prune_dict=vocab_size)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     del train_X
     del test_X
 
-    print('converting to tf-idf')
+    print('[INFO] encoding tf-idf')
     # convert stackoverflow data to bag of words vectors
     train_X, train_Y, test_X, test_Y = stk2Tfidf(sample_fp, label_fp,
                                                    sw_fp, prune_dict=vocab_size)
@@ -94,9 +94,9 @@ if __name__ == '__main__':
 
     # convert stackoverflow data to indexes from a dictionary
     # used for joint training of the word embeddings
-    print('converting to dictionary indices')
+    print('[INFO] encoding dictionary indices')
     train_X, train_Y, test_X, \
-    test_Y, dictionary = stk2DictIndex(sample_fp, label_fp,
+    test_Y, dictionary, null_idx = stk2DictIndex(sample_fp, label_fp,
                                             sw_fp, prune_dict=vocab_size)
 
 
@@ -105,19 +105,6 @@ if __name__ == '__main__':
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_indices.dat', train_X)
     np.savetxt(out_dir + 'test_indices.dat', test_X)
-
-    del train_X
-    del test_X
-
-    print('converting to sentence vector')
-    train_X, train_Y, test_X, test_Y = stk2Embed(sample_fp, label_fp,
-                                                   sw_fp, embed_dir=None,
-                                                   vtype='attention')
-
-    # save processed data to the out directory
-    np.savetxt(out_dir + 'train_sentvec.dat', train_X)
-    np.savetxt(out_dir + 'test_sentvec.dat', test_X)
-
 
     # save label files
     np.savetxt(out_dir + 'train_label.dat', train_Y)
@@ -130,6 +117,36 @@ if __name__ == '__main__':
     # close the stopwords file
     sw_fp.close()
 
+    X = np.concatenate([train_X, test_X], axis=0)
+    avg_len = round(np.mean(np.sum(1 * (X != null_idx), axis=1)))
+
+    # print output statistics
+    K = len(np.unique(train_Y))
+    N_train = train_X.shape[0]
+    N_test = test_X.shape[0]
+    N = N_train + N_test
+    max_len = train_X.shape[1]
+    V = len(dictionary)
+    print('\n[INFO] Dataset: StackOverflow')
+    print('[INFO] Num. Classes: %d' % K)
+    print('[INFO] Num. Samples: %d' % N)
+    print('[INFO] Num. Train: %d' % N_train)
+    print('[INFO] Num. Test: %d' % N_test)
+    print('[INFO] Max Sent. Length: %d' % max_len)
+    print('[INFO] Avg. Sent. Length: %d' % avg_len)
+    print('[INFO] Vocab Size: %d' % V)
+
+    # sent vec encoding
+    #print('converting to sentence vector')
+    #train_X, train_Y, test_X, test_Y = stk2Embed(sample_fp, label_fp,
+    #                                               sw_fp, embed_dir=None,
+    #                                               vtype='attention')
+
+    # save processed data to the out directory
+    #np.savetxt(out_dir + 'train_sentvec.dat', train_X)
+    #np.savetxt(out_dir + 'test_sentvec.dat', test_X)
+
+    # LPP encoding
     # save training sample hashes using LPP's
     #print('converting to binary hashes')
     #train_X = np.loadtxt(out_dir + 'train_bow.dat', delimiter=' ')

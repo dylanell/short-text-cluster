@@ -112,16 +112,18 @@ def docs2DictIndex(texts, dictionary):
 
     X = np.zeros((n, d))
 
+    null_idx = reverse_dictionary[NULL]
+
     for i, text in enumerate(texts):
         for j, word in enumerate(text):
             try:
                 X[i, j] = reverse_dictionary[word]
             except:
-                X[i, j] = reverse_dictionary[NULL]
+                X[i, j] = null_idx
         # fill remaining gaps with NULL character
-        X[i, j:] = reverse_dictionary[NULL]
+        X[i, j:] = null_idx
 
-    return X
+    return X, null_idx
 
 # input: list of tokenized texts as lists
 def docs2AvgEmbed(texts, embed_dir):

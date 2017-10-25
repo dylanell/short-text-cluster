@@ -176,7 +176,7 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
 
     dictionary = tu.buildDict(texts, prune_at=prune_dict)
 
-    X = tu.docs2DictIndex(texts, dictionary)
+    X, null_idx = tu.docs2DictIndex(texts, dictionary)
 
     del texts
 
@@ -188,7 +188,7 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     test_fp.seek(0)
     sw_fp.seek(0)
 
-    return train_X, train_Y, test_X, test_Y, dictionary
+    return train_X, train_Y, test_X, test_Y, dictionary, null_idx
 
 
 def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
@@ -381,7 +381,7 @@ def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000):
 
     dictionary = tu.buildDict(texts, prune_at=prune_dict)
 
-    X = tu.docs2DictIndex(texts, dictionary)
+    X, null_idx = tu.docs2DictIndex(texts, dictionary)
 
     del texts
 
@@ -393,7 +393,7 @@ def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000):
     label_fp.seek(0)
     sw_fp.seek(0)
 
-    return train_X, train_Y, test_X, test_Y, dictionary
+    return train_X, train_Y, test_X, test_Y, dictionary, null_idx
 
 
 def stk2Embed(sample_fp, label_fp, sw_fp, embed_dir, vtype='average'):
@@ -586,7 +586,7 @@ def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
 
     dictionary = tu.buildDict(texts, prune_at=prune_dict)
 
-    X = tu.docs2DictIndex(texts, dictionary)
+    X, null_idx = tu.docs2DictIndex(texts, dictionary)
 
     del texts
 
@@ -598,7 +598,7 @@ def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     test_fp.seek(0)
     sw_fp.seek(0)
 
-    return train_X, train_Y, test_X, test_Y, dictionary
+    return train_X, train_Y, test_X, test_Y, dictionary, null_idx
 
 
 # uses google word vectors to create sentence embeddings
