@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # create a kmeans model
     model = cluster.KMeans(n_clusters=K, init='k-means++',
-                           max_iter=100, n_init=10)
+                           max_iter=300, n_init=100)
 
     # convert sparse matrix X to dense array if using hierarchical clustering
     Y_pred = model.fit_predict(X)
