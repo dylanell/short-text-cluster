@@ -35,9 +35,10 @@ def validateModel(model_type):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 3):
+    if (len(sys.argv) < 7):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./classify.py <model> <data_dir>')
+        print('[USAGE] ./classify.py <model> <data_dir> <emb_dim> ' \
+              '<num_iter> <batch_size> <eta> <latent_dim> <plot_flag>')
         sys.exit()
 
     # get the type of model were using and chek if valid
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     n, s = train_X.shape
 
     # dimensionality of the word embeddings
-    d = 64
+    d = int(sys.argv[3])
 
     # dimensionality of the output (num classes)
     K = len(np.unique(train_Y))
@@ -78,17 +79,26 @@ if __name__ == '__main__':
     E = []
 
     """ hyper parameters """
-    eta = 1e-3
+    eta = float(sys.argv[6])
 
     """ runtime parameters """
-    num_iter = 2000
+    num_iter = int(sys.argv[4])
     plot_per = 50
-    batch_size = 32
-    plot = 1
+    batch_size = int(sys.argv[5])
+    plot = int(sys.argv[8])
 
     """ model parameters """
-    latent_dim = 100
+    latent_dim = int(sys.argv[7])
     emb_dims = [vocab_len, d]
+
+    print('\n[INFO] Model: %s' % model_type)
+    print('[INFO] Data Source: %s' % data_dir)
+    print('[INFO] Number of Iterations: %d' % num_iter)
+    print('[INFO] Word Vector Dimension: %d' % d)
+    print('[INFO] Batch Size: %d' % batch_size)
+    print('[INFO] Learning Rate: %f' % eta)
+    print('[INFO] Latent Dimension: %d' % latent_dim)
+    print('[INFO] Plotting Loss: %r\n' % bool(plot))
 
     """ tensorflow ops """
     # keep probability for dropout layers
@@ -137,6 +147,7 @@ if __name__ == '__main__':
         inst_E = []
 
         # train the network
+        print('')
         for i in range(num_iter):
             # grab a randomly chosen batch from the training data
             batch_X, batch_Y, indices = getBatch(train_X, train_OH, batch_size)
@@ -165,10 +176,10 @@ if __name__ == '__main__':
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
-            sys.stdout.write('\rTraining: ' + str(progress) + '%')
+            sys.stdout.write('\r[INFO] Training: ' + str(progress) + '%')
             sys.stdout.flush()
 
-        sys.stdout.write('\rTraining: 100%\n\n')
+        sys.stdout.write('\r[INFO] Training: 100%\n')
         sys.stdout.flush()
 
         test_Y_hat = np.zeros_like(test_Y)
@@ -182,34 +193,33 @@ if __name__ == '__main__':
             test_Y_hat[i] = sess.run(model.predict, test_feed)
 
         # get accuracy
-        if (0 in np.unique(train_Y)):
-            correct = np.sum(1 * (test_Y_hat == test_Y))
-        else:
-            correct = np.sum(1 * (test_Y_hat == (test_Y-1)))
+        correct = np.sum(1 * (test_Y_hat == test_Y))
         accuracy = float(correct)/float(num_test)*100.0
-        print accuracy
+        print('[INFO] Accuracy: %.2f' % accuracy)
 
         O = np.zeros((n, latent_dim))
+        B = np.zeros((n))
         for i in range(n):
             test_feed = {inputs: train_X[None, i, :], keep_prob: 1.0}
 
             out = sess.run(model.encode, test_feed)
 
             O[i, :] = out
+            B[i] = train_Y[i]
 
         np.savetxt('train_latent.dat', O)
+        np.savetxt('train_label.dat', B)
 
         sess.close()
 
-    # save loss values to a csv file
-    l_fp = open('loss.csv', 'w')
-    for e in E:
-        l_fp.write(str(e) + '\n')
-    l_fp.close()
-
-    y = np.loadtxt('loss.csv', delimiter=',')
-
     if plot:
+        # save loss values to a csv file
+        l_fp = open('loss.dat', 'w')
+        for e in E:
+            l_fp.write(str(e) + '\n')
+        l_fp.close()
+
+        y = np.loadtxt('loss.dat', delimiter=',')
+
         plt.plot(y)
-        #plt.plot(range(len(E)), E)
         plt.show()
