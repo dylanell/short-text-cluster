@@ -4,29 +4,51 @@ import numpy as np
 from utils import data_utils as du
 from utils import text_utils as tu
 import matplotlib.pyplot as plt
-import gensim
-import pickle
+import sys
 
 if __name__ == '__main__':
-    embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
+    # retrieve command line args
+    if (len(sys.argv) < 6):
+        print('[ERROR] not enough cmd line arguments')
+        print('[USAGE] ./visualize.py <embedding> <vectors> <labels> ' \
+              '<title> <plt_file>')
+        sys.exit()
 
+    embedding = sys.argv[1]
+    vector_fn = sys.argv[2]
+    label_fn = sys.argv[3]
+    plt_title = sys.argv[4]
+    plt_fn = sys.argv[5]
 
-    #X = np.loadtxt('datasets/q-type/train_bow.dat', delimiter=' ')
-    X = np.loadtxt('train_latent.dat', delimiter=' ')
-    L = np.loadtxt('train_label.dat', delimiter=' ').astype(np.int32)
+    X = np.loadtxt(vector_fn, delimiter=' ')
+    L = np.loadtxt(label_fn, delimiter=' ').astype(np.int32)
 
-    with open('datasets/q-type/train_texts.dat', 'r') as fp:
-        T = pickle.load(fp)
+    n, d = X.shape
 
-    num_samples = X.shape[0]
+    # number of classes
+    K = len(np.unique(L))
 
-    print X.shape
+    print('Input Shape: (%d, %d)' % (n, d))
 
-    Y = du.embedPCA(X, l=2, binary=False)
+    if (embedding == 'tsne'):
+        print('Embedding Model: T-SNE')
+        Y = du.embedTSNE(X, l=2, binary=False)
+    elif (embedding == 'lpp'):
+        print('Embedding Model: LPP')
+        Y = du.embedLPP(X, k=15, t=2e0, l=2, metric='l2', binary=False)
+    else:
+        print('Embedding Model: PCA')
+        Y = du.embedPCA(X, l=2, binary=False)
 
-    print Y.shape
+    n, e = Y.shape
 
-    #Y = du.embedTSNE(X, l=2, binary=False)
+    print('Embedded Shape: (%d, %d)' % (n, e))
+
+    plt.scatter(Y[:, 0], Y[:, 1], c=L, s=10)
+    plt.title(plt_title)
+
+    plt.savefig(plt_fn)
+
 
     #Y = du.embedLPP(X, k=15, t=2e0, l=50, metric='l2', binary=True)
 
@@ -34,15 +56,3 @@ if __name__ == '__main__':
 
     #Y = tu.docs2LPP(X, T, embed_dir, k=10, t=1e0, l=2,
     #                binary=False, batch_size=1000)
-
-    colors = ['r', 'g', 'b', 'y', 'k', 'c']
-
-    plt.figure(0)
-    for i in range(num_samples):
-        try:
-            plt.scatter(Y[i, 0], Y[i, 1], color=colors[L[i]], s=3)
-            plt.title('TCNN Semi-Supervised 100-Dimensional Vectors\n NMI: 0.4703')
-        except:
-            plt.scatter(Y[i, 0], Y[i, 1], s=3)
-            plt.title('TCNN Semi-Supervised 100-Dimensional Vectors\n NMI: 0.4703')
-    plt.show()
