@@ -51,10 +51,12 @@ if __name__ == '__main__':
 
     # get the vocabulary (dictionary) size
     vocab_size = 20000
+    stem = False
 
     print('[INFO] encoding filtered texts')
     # convert stackoverflow data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = stk2Texts(sample_fp, label_fp, sw_fp)
+    train_X, train_Y, test_X, test_Y = stk2Texts(sample_fp, label_fp,
+                                                 sw_fp, stem=stem)
 
     # save processed data to the out directory
     try:
@@ -70,8 +72,8 @@ if __name__ == '__main__':
 
     print('[INFO] encoding bag-of-words')
     # convert stackoverflow data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = stk2Bow(sample_fp, label_fp,
-                                                 sw_fp, prune_dict=vocab_size)
+    train_X, train_Y, test_X, test_Y = stk2Bow(sample_fp, label_fp, sw_fp,
+                                            prune_dict=vocab_size, stem=stem)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_bow.dat', train_X)
@@ -82,8 +84,8 @@ if __name__ == '__main__':
 
     print('[INFO] encoding tf-idf')
     # convert stackoverflow data to bag of words vectors
-    train_X, train_Y, test_X, test_Y = stk2Tfidf(sample_fp, label_fp,
-                                                   sw_fp, prune_dict=vocab_size)
+    train_X, train_Y, test_X, test_Y = stk2Tfidf(sample_fp, label_fp, sw_fp,
+                                            prune_dict=vocab_size, stem=stem)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_tfidf.dat', train_X)
@@ -96,8 +98,8 @@ if __name__ == '__main__':
     # used for joint training of the word embeddings
     print('[INFO] encoding dictionary indices')
     train_X, train_Y, test_X, \
-    test_Y, dictionary, null_idx = stk2DictIndex(sample_fp, label_fp,
-                                            sw_fp, prune_dict=vocab_size)
+    test_Y, dictionary, null_idx = stk2DictIndex(sample_fp, label_fp, sw_fp,
+                                            prune_dict=vocab_size, stem=stem)
 
 
     dictionary.save(out_dir + 'vocabulary.dat')

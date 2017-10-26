@@ -22,21 +22,16 @@ NULL = '__'
 # filters out stop words, optionally performs stemming and returns tokenized
 # texts
 def filterTok(documents, stoplist, stem=False):
-    # filter text using the stoplist
-    texts = [[word for word in document.lower().split() if word not in stoplist]
-            for document in documents]
+    if (stem):
+        from nltk.stem import PorterStemmer
+        ps = PorterStemmer()
+        # filter text using the stoplist and stem
+        texts = [[ps.stem(word) for word in document.decode('utf-8').lower().split() if word not in stoplist] for document in documents]
+    else:
+        # filter text using the stoplist
+        texts = [[word for word in document.lower().split() if word not in stoplist] for document in documents]
 
-    # remove words that appear once
-    """
-    from collections import defaultdict
-    frequency = defaultdict(int)
-    for text in texts:
-        for token in text:
-            frequency[token] += 1
 
-    texts = [[token for token in text if frequency[token] > 1]
-            for text in texts]
-    """
 
     return texts
 

@@ -70,7 +70,7 @@ def qtypeSplit(train_fp, test_fp):
     return train_X, train_Y, test_X, test_Y
 
 # convert the q-type dataset to list of lists
-def qtype2Texts(train_fp, test_fp, sw_fp):
+def qtype2Texts(train_fp, test_fp, sw_fp, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -81,7 +81,7 @@ def qtype2Texts(train_fp, test_fp, sw_fp):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    X = tu.filterTok(documents, stoplist, stem=False)
+    X = tu.filterTok(documents, stoplist, stem=stem)
 
     train_X = X[:QTYPE_N_TR]
     test_X = X[-QTYPE_N_TE:]
@@ -95,7 +95,7 @@ def qtype2Texts(train_fp, test_fp, sw_fp):
 
 
 # convert the qtype dataset to log normalized bag of words vectors
-def qtype2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
+def qtype2Bow(train_fp, test_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -106,7 +106,7 @@ def qtype2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -127,7 +127,7 @@ def qtype2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y
 
 # convert the qtype dataset to tf-idf vectors
-def qtype2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
+def qtype2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -138,7 +138,7 @@ def qtype2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -159,7 +159,7 @@ def qtype2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y
 
 
-def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
+def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -170,7 +170,7 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -191,7 +191,7 @@ def qtype2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y, dictionary, null_idx
 
 
-def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
+def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average', stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = qtypeSplit(train_fp, test_fp)
 
@@ -202,7 +202,7 @@ def qtype2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -275,7 +275,7 @@ def stkSplit(sample_fp, label_fp):
     return train_X, train_Y, test_X, test_Y
 
 
-def stk2Texts(sample_fp, label_fp, sw_fp):
+def stk2Texts(sample_fp, label_fp, sw_fp, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
 
@@ -286,7 +286,7 @@ def stk2Texts(sample_fp, label_fp, sw_fp):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    X = tu.filterTok(documents, stoplist, stem=False)
+    X = tu.filterTok(documents, stoplist, stem=stem)
 
     train_X = X[:STK_N_TR]
     test_X = X[-STK_N_TE:]
@@ -299,7 +299,7 @@ def stk2Texts(sample_fp, label_fp, sw_fp):
     return train_X, train_Y, test_X, test_Y
 
 # convert the stackoverflow dataset to log-normalized bag of words vectors
-def stk2Bow(sample_fp, label_fp, sw_fp, prune_dict=5000):
+def stk2Bow(sample_fp, label_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
 
@@ -310,7 +310,7 @@ def stk2Bow(sample_fp, label_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -332,7 +332,7 @@ def stk2Bow(sample_fp, label_fp, sw_fp, prune_dict=5000):
 
 
 # convert the stackoverflow dataset to tf-idf vectors
-def stk2Tfidf(sample_fp, label_fp, sw_fp, prune_dict=5000):
+def stk2Tfidf(sample_fp, label_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
 
@@ -343,7 +343,7 @@ def stk2Tfidf(sample_fp, label_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -364,7 +364,7 @@ def stk2Tfidf(sample_fp, label_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y
 
 
-def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000):
+def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
 
@@ -375,7 +375,7 @@ def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -396,7 +396,7 @@ def stk2DictIndex(sample_fp, label_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y, dictionary, null_idx
 
 
-def stk2Embed(sample_fp, label_fp, sw_fp, embed_dir, vtype='average'):
+def stk2Embed(sample_fp, label_fp, sw_fp, embed_dir, vtype='average', stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = stkSplit(sample_fp, label_fp)
 
@@ -407,7 +407,7 @@ def stk2Embed(sample_fp, label_fp, sw_fp, embed_dir, vtype='average'):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -480,7 +480,7 @@ def agnewsSplit(train_fp, test_fp):
 
 
 # convert the ag-news dataset to list of lists
-def agnews2Texts(train_fp, test_fp, sw_fp):
+def agnews2Texts(train_fp, test_fp, sw_fp, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = agnewsSplit(train_fp, test_fp)
 
@@ -491,7 +491,7 @@ def agnews2Texts(train_fp, test_fp, sw_fp):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    X = tu.filterTok(documents, stoplist, stem=False)
+    X = tu.filterTok(documents, stoplist, stem=stem)
 
     train_X = X[:AG_N_TR]
     test_X = X[-AG_N_TE:]
@@ -504,7 +504,7 @@ def agnews2Texts(train_fp, test_fp, sw_fp):
     return train_X, train_Y, test_X, test_Y
 
 # convert the ag-news dataset to log normalized bag of words vectors
-def agnews2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
+def agnews2Bow(train_fp, test_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = agnewsSplit(train_fp, test_fp)
 
@@ -515,7 +515,7 @@ def agnews2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -537,7 +537,7 @@ def agnews2Bow(train_fp, test_fp, sw_fp, prune_dict=5000):
 
 
 # convert the ag-news dataset to tf-idf vectors
-def agnews2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
+def agnews2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = agnewsSplit(train_fp, test_fp)
 
@@ -548,7 +548,7 @@ def agnews2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -569,7 +569,7 @@ def agnews2Tfidf(train_fp, test_fp, sw_fp, prune_dict=5000):
     return train_X, train_Y, test_X, test_Y
 
 
-def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
+def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000, stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = agnewsSplit(train_fp, test_fp)
 
@@ -580,7 +580,7 @@ def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
@@ -602,7 +602,7 @@ def agnews2DictIndex(train_fp, test_fp, sw_fp, prune_dict=5000):
 
 
 # uses google word vectors to create sentence embeddings
-def agnews2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
+def agnews2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average', stem=False):
     # split the data into samples and labels
     train_D, train_Y, test_D, test_Y = agnewsSplit(train_fp, test_fp)
 
@@ -613,7 +613,7 @@ def agnews2Embed(train_fp, test_fp, sw_fp, embed_dir, vtype='average'):
     for i, line in enumerate(sw_fp):
         stoplist.append(line.split()[0])
 
-    texts = tu.filterTok(documents, stoplist, stem=False)
+    texts = tu.filterTok(documents, stoplist, stem=stem)
 
     del documents
 
