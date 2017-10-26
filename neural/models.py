@@ -27,16 +27,25 @@ class NBOW(object):
         # mark all words that are not null
         used = tf.cast(tf.not_equal(inputs, null_word), tf.float32)
 
+        # gett the lengths of each sentence in the input
+        length = tf.cast(tf.reduce_sum(used, 1), tf.int32)
+
         # count how many samples in this batch
         num_samp = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 1), -1), tf.int32))
 
         # create a mask to zero out null words
         mask = tf.expand_dims(used, [-1])
 
-        # embed the words and mask
+        # embed the words and mask so null characters are zero vectors
         inputs_emb = mask * tf.nn.embedding_lookup(embeddings, inputs)
 
-        inputs_vec = tf.reduce_sum(inputs_emb, axis=1)
+        # inputs are the sum of all word vectors
+        #inputs_vec = tf.reduce_sum(inputs_emb, axis=1)
+
+        # inputs are the average word vector (zeros vectors not counted)
+        inputs_vec = tf.reduce_sum(inputs_emb, axis=1) / tf.cast(tf.expand_dims(length, -1), tf.float32)
+
+        self._test = inputs_vec
 
         self._latent = tf.contrib.layers.fully_connected(inputs_vec, latent_dim,
                                                        activation_fn=tf.nn.tanh)
@@ -133,7 +142,12 @@ class LSTM(object):
                                            time_major=True)
 
         # get the hidden state of the network
-        self._latent = states.h
+
+        # take last hidden state as latent state
+        #self._latent = states.h
+
+        # take average of all non-zero hidden states as latent state
+        self._latent = tf.reduce_sum(outputs, axis=0) / tf.cast(tf.expand_dims(length, -1), tf.float32)
 
         dropout = tf.nn.dropout(self._latent, keep_prob=kp)
 
