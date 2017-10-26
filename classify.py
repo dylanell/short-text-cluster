@@ -35,18 +35,18 @@ def validateModel(model_type):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 7):
+    if (len(sys.argv) < 9):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./classify.py <model> <data_dir> <emb_dim> ' \
+        print('[USAGE] ./classify.py <data_dir> <model> <emb_dim> ' \
               '<num_iter> <batch_size> <eta> <latent_dim> <plot_flag>')
         sys.exit()
 
     # get the type of model were using and chek if valid
-    model_type = sys.argv[1]
+    model_type = sys.argv[2]
     validateModel(model_type)
 
     # get the data
-    data_dir = sys.argv[2]
+    data_dir = sys.argv[1]
     train_X = np.loadtxt(data_dir + 'train_indices.dat')
     train_Y = np.loadtxt(data_dir + 'train_label.dat')
     test_X = np.loadtxt(data_dir + 'test_indices.dat')
