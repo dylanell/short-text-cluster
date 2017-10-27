@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-l = np.loadtxt('loss.csv')
+l = np.loadtxt('loss.dat')
 
 plt.plot(range(l.shape[0]), l)
 plt.show()
