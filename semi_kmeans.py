@@ -23,6 +23,7 @@ from sklearn import metrics
 
 from utils.data_utils import getBatch
 from utils.data_utils import label2OneHot
+from utils import cluster_utils as cu
 
 from neural.models import NBOW
 from neural.models import LSTM
@@ -68,7 +69,7 @@ def updateAssignments(FX, MU):
         R[i, np.argmin(dist)] = 1
 
     return R
-
+"""
 # src: https://stackoverflow.com/questions/8317022/get-intersecting-rows-across-two-2d-numpy-arrays
 def arrayRowIntersection(a,b):
    tmp=np.prod(np.swapaxes(a[:,:,None],1,2)==b,axis=2)
@@ -79,7 +80,7 @@ def arrayRowIntersection(a,b):
 # "for each truth label, what is the equivalent label in our cluster labels?"
 # this is what mapping G(.) does. cluster_label = G(truth_label)
 def mapping(T, L, X):
-    classes = np.unique(labeled_Y)
+    classes = np.unique(T)
     K = classes.shape[0]
 
     C = np.zeros((K, K))
@@ -114,7 +115,7 @@ def mapping(T, L, X):
         mapped_T[i] = G[-1][int(T[i])]
 
     return mapped_T, G[-1]
-
+"""
 
 # updates centroids using eq. 5 using labeled and unlabeled data
 def updateCentroids(MU, FX, R, mapped_Y, alpha, margin):
@@ -425,7 +426,7 @@ if __name__ == '__main__':
             #print 'R', R.shape
 
             # map truth labels to labels in our clustering
-            mapped_Y, G = mapping(labeled_Y, R[:l], labeled_X)
+            mapped_Y, G = cu.mapping(labeled_Y, R[:l], labeled_X, one_hot=True)
 
             #print 'G', G
 
