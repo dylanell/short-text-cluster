@@ -17,6 +17,7 @@ import copy
 import data_utils as du
 
 NULL = '__'
+IDK = '##'
 
 # takes a list of strings, splits them by white space, lowercases all words,
 # filters out stop words, optionally performs stemming and returns tokenized
@@ -40,6 +41,9 @@ def buildDict(texts, prune_at=5000):
     # TODO: keep most frequent words
     for text in texts:
         text.append(NULL)
+
+    for text in texts:
+        text.append(IDK)
 
     # insert a null character so that it takes the zeroith spot of the vocab
     texts.insert(0, [NULL])
@@ -108,13 +112,14 @@ def docs2DictIndex(texts, dictionary):
     X = np.zeros((n, d))
 
     null_idx = reverse_dictionary[NULL]
+    idk_idx = reverse_dictionary[IDK]
 
     for i, text in enumerate(texts):
         for j, word in enumerate(text):
             try:
                 X[i, j] = reverse_dictionary[word]
             except:
-                X[i, j] = null_idx
+                X[i, j] = idk_idx
         # fill remaining gaps with NULL character
         X[i, j:] = null_idx
 
