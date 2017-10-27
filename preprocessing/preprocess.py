@@ -470,7 +470,7 @@ def agnewsSplit(train_fp, test_fp):
         test_X.append(sample)
 
         # add label to train labels array
-        test_Y[i, 0] = label
+        test_Y[i, 0] = label - 1
 
     # set fp's back to beginning of file
     train_fp.seek(0)
