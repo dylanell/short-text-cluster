@@ -61,10 +61,10 @@ if __name__ == '__main__':
 
     print C
 
-    F1_score = cu.computeF1(C)
+    F_score = cu.FMeasure(C)
 
     # get the NMI score of the clustering
-    score = metrics.normalized_mutual_info_score(T, L)
+    score = metrics.adjusted_mutual_info_score(T, L)
 
-    print 'NMI:', score
-    print 'F1:', F1_score
+    print 'AMI:', score
+    print 'F1:', F_score
