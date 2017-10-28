@@ -85,7 +85,7 @@ def buildContingency(mapped_T, L):
 # the mapped truth labels using the minimum assignment problem, hence C will
 # already be organized such that the correct assignments are matched by
 # row = col pairs
-def computeF1(C):
+def FMeasure(C):
     P = np.diag(C)/np.sum(C, axis=1)
     R = np.diag(C)/np.sum(C, axis=0)
 
