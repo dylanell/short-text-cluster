@@ -37,6 +37,7 @@ def validateModel(model_type):
     valid_types = ['lstm', 'dcnn', 'tcnn', 'nbow']
     assert(model_type in valid_types), 'model \'%s\' is not valid' % model_type
 
+
 def getSeed(labeled_X, labeled_Y):
     classes = np.unique(labeled_Y)
     K = classes.shape[0]
@@ -54,6 +55,7 @@ def getSeed(labeled_X, labeled_Y):
 
     return seed_X
 
+
 def updateAssignments(FX, MU):
     n, d = FX.shape
 
@@ -69,53 +71,7 @@ def updateAssignments(FX, MU):
         R[i, np.argmin(dist)] = 1
 
     return R
-"""
-# src: https://stackoverflow.com/questions/8317022/get-intersecting-rows-across-two-2d-numpy-arrays
-def arrayRowIntersection(a,b):
-   tmp=np.prod(np.swapaxes(a[:,:,None],1,2)==b,axis=2)
-   return a[np.sum(np.cumsum(tmp,axis=0)*tmp==1,axis=1).astype(bool)]
 
-# uses scikit learn to solve the minimum assignment problem to construct
-# an optimal mapping from true labels T to current labels L
-# "for each truth label, what is the equivalent label in our cluster labels?"
-# this is what mapping G(.) does. cluster_label = G(truth_label)
-def mapping(T, L, X):
-    classes = np.unique(T)
-    K = classes.shape[0]
-
-    C = np.zeros((K, K))
-
-    # convert L from one hot to numerical labels
-    L = np.argmax(L, axis=1)
-
-    n = T.shape[0]
-
-    for i in range(K):
-        for j in range(K):
-            Xi = X[np.where(T == i)]
-            Xj = X[np.where(L == j)]
-
-            Xi_and_Xj = arrayRowIntersection(Xi, Xj)
-
-            len_Xi = Xi.shape[0]
-            len_Xj = Xj.shape[0]
-            len_Xi_and_Xj = Xi_and_Xj.shape[0]
-
-            dis = len_Xi + len_Xj - 2*(len_Xi_and_Xj)
-
-            C[i, j] = dis
-
-    # solve the linear assignment problem on C with scipy
-    G = scipy.optimize.linear_sum_assignment(C)
-
-    # map each truth label in T to the correspondng cluster label in mapped_T
-    mapped_T = np.zeros_like(T)
-
-    for i in range(n):
-        mapped_T[i] = G[-1][int(T[i])]
-
-    return mapped_T, G[-1]
-"""
 
 # updates centroids using eq. 5 using labeled and unlabeled data
 def updateCentroids(MU, FX, R, mapped_Y, alpha, margin):
@@ -187,6 +143,7 @@ def updateCentroids(MU, FX, R, mapped_Y, alpha, margin):
         MU[k, :] = muk
 
     return MU
+
 
 # hybrid delta function
 # outputs 1 if a == b or outputs 1 if a > 0
@@ -274,7 +231,6 @@ if __name__ == '__main__':
         if ((unique_labeled == K) and (unique_unlabeled==K)):
             break
 
-
     """ hyper parameters """
     eta = 1e-3
     alpha = 0.001 # lower alpha ->
@@ -285,7 +241,7 @@ if __name__ == '__main__':
     pretrain_iter = 1000
     plot_per = 1
     batch_size = 32
-    plot = 1
+    plot = 0
 
     """ model parameters """
     emb_dims = [vocab_len, d]
@@ -508,15 +464,14 @@ if __name__ == '__main__':
 
     print('NMI Score: %.4f' % score)
 
-    # save loss values to a csv file
-    l_fp = open('loss.csv', 'w')
-    for e in E:
-        l_fp.write(str(e) + '\n')
-    l_fp.close()
-
-    y = np.loadtxt('loss.csv', delimiter=',')
-
     if plot:
-        #plt.plot(y)
-        plt.plot(range(len(E)), E)
+        # save loss values to a csv file
+        l_fp = open('loss.dat', 'w')
+        for e in E:
+            l_fp.write(str(e) + '\n')
+        l_fp.close()
+
+        y = np.loadtxt('loss.dat', delimiter=',')
+
+        plt.plot(y)
         plt.show()
