@@ -241,7 +241,7 @@ if __name__ == '__main__':
     pretrain_iter = 1000
     plot_per = 1
     batch_size = 32
-    plot = 0
+    plot = 1
 
     """ model parameters """
     emb_dims = [vocab_len, d]
