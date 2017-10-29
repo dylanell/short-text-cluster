@@ -197,9 +197,11 @@ if __name__ == '__main__':
         accuracy = float(correct)/float(num_test)*100.0
         print('[INFO] Accuracy: %.2f' % accuracy)
 
-        a = np.loadtxt('accuracy_log.txt')
+        stat_path = 'results/' + model_type + '/' + data_dir.split('/')[1] + '/'
+
+        a = np.loadtxt(stat_path + 'accuracy_log.txt')
         a = np.append(a, accuracy)
-        np.savetxt('accuracy_log.txt', a)
+        np.savetxt(stat_path + 'accuracy_log.txt', a)
 
         O = np.zeros((n, latent_dim))
         B = np.zeros((n))
@@ -211,8 +213,8 @@ if __name__ == '__main__':
             O[i, :] = out
             B[i] = train_Y[i]
 
-        np.savetxt('train_latent_' + str(accuracy) + '.dat', O)
-        np.savetxt('train_label_' + str(accuracy) + '.dat', B)
+        np.savetxt(stat_path + 'train_latent_' + str(accuracy) + '.dat', O)
+        np.savetxt(stat_path + 'train_label_' + str(accuracy) + '.dat', B)
 
         sess.close()
 
