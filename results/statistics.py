@@ -44,22 +44,19 @@ if __name__ == '__main__':
         print('[USAGE] ./statistics.py <model>')
         sys.exit()
 
-    model = sys.argv[1]
+    model_dir = sys.argv[1]
 
-    if (model == 'nbow'):
+    if (model_dir == 'nbow/'):
         print('[INFO] getting NBOW performance statistics')
-        model_dir = 'nbow/'
-    elif (model == 'lstm'):
+    elif (model_dir == 'lstm/'):
         print('[INFO] getting LSTM performance statistics')
-        model_dir = 'lstm/'
-    elif (model == 'tcnn'):
+    elif (model_dir == 'tcnn/'):
         print('[INFO] getting TCNN performance statistics')
-        model_dir = 'tcnn/'
-    elif (model == 'dcnn'):
+    elif (model_dir == 'dcnn/'):
         print('[INFO] getting DCNN performance statistics')
         model_dir = 'dcnn/'
     else:
-        print('[ERROR] unknown model %s; exiting' % model)
+        print('[ERROR] unknown model %s; exiting' % model_dir)
         sys.exit()
 
 
