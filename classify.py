@@ -129,8 +129,8 @@ if __name__ == '__main__':
                     targets, NULL_IDX, kp=keep_prob, eta=eta,
                     out_type='softmax')
     elif (model_type=='dcnn'):
-        k_top_v = 4
-        filt_dims = [[7, 20], [5, 14]]
+        k_top_v = 5
+        filt_dims = [[3, 12], [3, 8]]
         fc_dims = [latent_dim, K]
         model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,
