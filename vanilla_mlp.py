@@ -121,12 +121,12 @@ if __name__ == '__main__':
         sess.close()
 
     # save loss values to a csv file
-    l_fp = open('loss.csv', 'w')
+    l_fp = open('loss.dat', 'w')
     for e in E:
         l_fp.write(str(e) + '\n')
     l_fp.close()
 
-    y = np.loadtxt('loss.csv', delimiter=',')
+    y = np.loadtxt('loss.dat', delimiter=',')
 
     if plot:
         plt.plot(y)
