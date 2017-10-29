@@ -50,7 +50,8 @@ if __name__ == '__main__':
     out_dir = sys.argv[3]
 
     # get the vocabulary (dictionary) size
-    vocab_size = 20000
+    vocab_limit = 200000
+    vector_limit = 20000
     stem = False
 
     embed_dir = '/home/dylan/rpi/thesis/GoogleNews-vectors-negative300.bin'
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     print('[INFO] encoding bag-of-words')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Bow(train_fp, test_fp, sw_fp,
-                                            prune_dict=vocab_size, stem=stem)
+                                            prune_dict=vector_limit, stem=stem)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_bow.dat', train_X)
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     print('[INFO] encoding tf-idf')
     # convert question type data to bag of words vectors
     train_X, train_Y, test_X, test_Y = qtype2Tfidf(train_fp, test_fp, sw_fp,
-                                            prune_dict=vocab_size, stem=stem)
+                                            prune_dict=vector_limit, stem=stem)
 
     # save processed data to the out directory
     np.savetxt(out_dir + 'train_tfidf.dat', train_X)
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     print('[INFO] encoding dictionary indices')
     train_X, train_Y, test_X, \
     test_Y, dictionary, null_idx = qtype2DictIndex(train_fp, test_fp, sw_fp,
-                                            prune_dict=vocab_size, stem=stem)
+                                            prune_dict=vocab_limit, stem=stem)
 
 
     dictionary.save(out_dir + 'vocabulary.dat')
