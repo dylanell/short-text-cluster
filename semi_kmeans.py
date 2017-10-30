@@ -156,10 +156,10 @@ def delta(a, b=None):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 7):
+    if (len(sys.argv) < 8):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./classify.py <data_dir> <model> ' \
-                    '<num_labeled> <emb_dim> <margin> <plot_flag>')
+                    '<num_labeled> <emb_dim> <margin> <num_iter> <plot_flag>')
         sys.exit()
 
     # get the type of model were using and chek if valid
@@ -245,11 +245,11 @@ if __name__ == '__main__':
     margin = float(sys.argv[5])
 
     """ runtime parameters """
-    num_iter = 400
+    num_iter = int(sys.argv[6])
     pretrain_iter = 1000
     plot_per = 1
     batch_size = 128
-    plot = int(sys.argv[6])
+    plot = int(sys.argv[7])
 
     """ model parameters """
     emb_dims = [vocab_len, d]
