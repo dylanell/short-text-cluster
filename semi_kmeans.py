@@ -261,7 +261,7 @@ if __name__ == '__main__':
     print('[INFO] Batch Size: %d' % batch_size)
     print('[INFO] Learning Rate: %f' % eta)
     print('[INFO] Latent Dimension: %d' % latent_dim)
-    print('[INFO] Margin: %.2f' % margin)
+    print('[INFO] Margin: %.3f' % margin)
     print('[INFO] Plotting Loss: %r\n' % bool(plot))
 
     """ tensorflow ops """
