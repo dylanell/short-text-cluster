@@ -261,7 +261,7 @@ if __name__ == '__main__':
     print('[INFO] Batch Size: %d' % batch_size)
     print('[INFO] Learning Rate: %f' % eta)
     print('[INFO] Latent Dimension: %d' % latent_dim)
-    print('[INFO] Margin: %f' % margin)
+    print('[INFO] Margin: %.2f' % margin)
     print('[INFO] Plotting Loss: %r\n' % bool(plot))
 
     """ tensorflow ops """
@@ -423,6 +423,7 @@ if __name__ == '__main__':
             # colelct the current loss
             e = sess.run(kmeans_loss, train_feed)
             inst_E.append(e)
+            print e
 
             # if we have hit a plotting period and we are in plotting
             # mode, calculate the current batch loss and append to
@@ -433,7 +434,6 @@ if __name__ == '__main__':
                 e = np.mean(inst_E)
                 E.append(e)
                 inst_E = []
-                print e
 
             # report training progress
             progress = int(float(i)/float(num_iter)*100.0)
