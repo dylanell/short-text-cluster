@@ -156,20 +156,26 @@ def delta(a, b=None):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 5):
+    if (len(sys.argv) < 7):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./classify.py <model> <data_dir> ' \
-                    '<num_labeled> <emb_dim>')
+        print('[USAGE] ./classify.py <data_dir> <model> ' \
+                    '<num_labeled> <emb_dim> <margin> <plot_flag>')
         sys.exit()
 
     # get the type of model were using and chek if valid
-    model_type = sys.argv[1]
+    model_type = sys.argv[2]
     validateModel(model_type)
 
     # get the data
-    data_dir = sys.argv[2]
+    data_dir = sys.argv[1]
     train_X = np.loadtxt(data_dir + 'train_indices.dat')
     train_Y = np.loadtxt(data_dir + 'train_label.dat')
+    test_X = np.loadtxt(data_dir + 'test_indices.dat')
+    test_Y = np.loadtxt(data_dir + 'test_label.dat')
+
+    # concatenate all data to make actual training set
+    train_X = np.concatenate([train_X, test_X], axis=0)
+    train_Y = np.concatenate([train_Y, test_Y], axis=0)
 
     # number of labeled samples to use
     l = int(sys.argv[3])
@@ -194,8 +200,10 @@ if __name__ == '__main__':
     # size of inputs [n, s] = [num_samples, max_seq_len]
     n, s = train_X.shape
 
+    print n
+
     # dimensionality of the word embeddings
-    d = 64
+    d = 32
 
     # dimensionality of the output (num classes)
     K = len(np.unique(train_Y))
@@ -203,7 +211,7 @@ if __name__ == '__main__':
     # for collecting error values
     E = []
 
-    # only use 5000 samples
+    # only use max 6000 samples
     n = min(n, 6000)
 
     # split into labeled and unlabeled sets and ensure we have a sample
@@ -233,18 +241,28 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
-    alpha = 0.001 # lower alpha ->
-    margin = 5
+    alpha = 0.001
+    margin = float(sys.argv[5])
 
     """ runtime parameters """
     num_iter = 400
     pretrain_iter = 1000
     plot_per = 1
-    batch_size = 32
-    plot = 1
+    batch_size = 128
+    plot = int(sys.argv[6])
 
     """ model parameters """
     emb_dims = [vocab_len, d]
+
+    print('\n[INFO] Model: %s' % model_type)
+    print('[INFO] Data Source: %s' % data_dir)
+    print('[INFO] Number of Iterations: %d' % num_iter)
+    print('[INFO] Word Vector Dimension: %d' % d)
+    print('[INFO] Batch Size: %d' % batch_size)
+    print('[INFO] Learning Rate: %f' % eta)
+    print('[INFO] Latent Dimension: %d' % latent_dim)
+    print('[INFO] Margin: %f' % margin)
+    print('[INFO] Plotting Loss: %r\n' % bool(plot))
 
     """ tensorflow ops """
     # keep probability for dropout layers
@@ -260,11 +278,11 @@ if __name__ == '__main__':
     if (model_type=='nbow'):
         dims = [latent_dim, K]
         model = NBOW(emb_dims, dims, inputs, targets,
-                     NULL_IDX, kp=keep_prob, eta=1e-3, out_type='softmax')
+                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
     elif (model_type=='lstm'):
         dims = [latent_dim, K]
         model = LSTM(emb_dims, dims, inputs, targets,
-                     NULL_IDX, kp=keep_prob, eta=1e-3, out_type='softmax')
+                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
     elif (model_type=='tcnn'):
         num_maps = 100
         flat_dim = num_maps * 3
@@ -272,15 +290,15 @@ if __name__ == '__main__':
         filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
         fc_dims = [latent_dim, K]
         model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
-                    targets, NULL_IDX, kp=keep_prob, eta=1e-3,
+                    targets, NULL_IDX, kp=keep_prob, eta=eta,
                     out_type='softmax')
     elif (model_type=='dcnn'):
-        k_top_v = 4
-        filt_dims = [[7, 20], [5, 14]]
+        k_top_v = 5
+        filt_dims = [[3, 12], [3, 8]]
         fc_dims = [latent_dim, K]
         model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,
-                    eta=1e-3, out_type='softmax')
+                    eta=eta, out_type='softmax')
     else:
         print('model \'%s\' is not valid' % model_type)
 
@@ -451,18 +469,6 @@ if __name__ == '__main__':
         np.savetxt('train_label.dat', B)
 
         sess.close()
-
-    # create a kmeans model
-    model = cluster.KMeans(n_clusters=K, init='k-means++',
-                           max_iter=300, n_init=100)
-
-    # cluster the latent states
-    Y_pred = model.fit_predict(O)
-
-    # get the NMI score of the clustering
-    score = metrics.normalized_mutual_info_score(B, Y_pred)
-
-    print('NMI Score: %.4f' % score)
 
     if plot:
         # save loss values to a csv file
