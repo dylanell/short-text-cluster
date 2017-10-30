@@ -105,12 +105,8 @@ if __name__ == '__main__':
 
     # print statistics
     print('[INFO] Q-Type Accuracy: %.2f +- %.2f' % (avg_qtype_a, std_qtype_a))
+    print('[INFO] Q-Type Intra/Inter Neigh. Dist: [%.2f, %.2f]' % (avg_qtype_neigh_dist, avg_qtype_non_neigh_dist))
     print('[INFO] StackOverflow Accuracy: %.2f +- %.2f' % (avg_stk_a, std_stk_a))
+    print('[INFO] StackOverflow Intra/Inter Neigh. Dist: [%.2f, %.2f]' % (avg_stk_neigh_dist, avg_stk_non_neigh_dist))
     print('[INFO] AG-News Accuracy: %.2f +- %.2f' % (avg_agnews_a, std_agnews_a))
-
-    # get averages of all neigh-to-neigh distances
-    avg_neigh_dist = (avg_qtype_neigh_dist + avg_stk_neigh_dist + avg_agnews_neigh_dist)/3.0
-    avg_non_neigh_dist = (avg_qtype_non_neigh_dist + avg_stk_non_neigh_dist + avg_agnews_non_neigh_dist)/3.0
-
-    print_args = (avg_neigh_dist, avg_non_neigh_dist)
-    print('[INFO] Neigh/Non-Neigh Dist: [%.2f, %.2f] ' % print_args)
+    print('[INFO] AG-News Intra/Inter Neigh. Dist: [%.2f, %.2f]' % (avg_agnews_neigh_dist, avg_agnews_non_neigh_dist))
