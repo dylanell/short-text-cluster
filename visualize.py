@@ -8,10 +8,10 @@ import sys
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 6):
+    if (len(sys.argv) < 7):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./visualize.py <embedding> <vectors> <labels> ' \
-              '<title> <plt_file>')
+              '<title> <plt_file> <sample_size>')
         sys.exit()
 
     embedding = sys.argv[1]
@@ -19,9 +19,17 @@ if __name__ == '__main__':
     label_fn = sys.argv[3]
     plt_title = sys.argv[4]
     plt_fn = sys.argv[5]
+    sample_size = int(sys.argv[6])
 
     X = np.loadtxt(vector_fn, delimiter=' ')
     L = np.loadtxt(label_fn, delimiter=' ').astype(np.int32)
+
+    # if sample size is zero use the whole dataset otherwise grab
+    # a sample from the data (for datasets too large to do visualizations)
+    # on the whole thing
+    if (sample_size != 0):
+        # grab a randomly chosen batch from the training data
+        X, L, _ = du.getBatch(X, L, sample_size)
 
     n, d = X.shape
 
