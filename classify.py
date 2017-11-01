@@ -120,17 +120,17 @@ if __name__ == '__main__':
         model = LSTM(emb_dims, dims, inputs, targets,
                      NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
     elif (model_type=='tcnn'):
-        num_maps = 100
+        num_maps = 500
         flat_dim = num_maps * 3
         emb_dims = [vocab_len, d]
-        filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
+        filt_dims = [[1, num_maps], [2, num_maps], [3, num_maps]]
         fc_dims = [latent_dim, K]
         model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, kp=keep_prob, eta=eta,
                     out_type='softmax')
     elif (model_type=='dcnn'):
         k_top_v = 5
-        filt_dims = [[3, 12], [3, 8]]
+        filt_dims = [[8, 5]]
         fc_dims = [latent_dim, K]
         model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,

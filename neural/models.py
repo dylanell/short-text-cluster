@@ -221,13 +221,6 @@ class DynamicCNN(object):
                   [0, 0],
                   [0, 0]]
 
-        c2_filt_dim = [filt_dims[1][0], 1, filt_dims[0][1], filt_dims[1][1]]
-        c2_strides = [1, 1, 1, 1]
-        c2_pad = [[0, 0],
-                  [filt_dims[1][0] - 1, filt_dims[1][0] - 1],
-                  [0, 0],
-                  [0, 0]]
-
         # amount of kmax pooling at top layer
         k_top = tf.constant(k_top_v, dtype=tf.float32)
 
@@ -241,14 +234,6 @@ class DynamicCNN(object):
 
         c1_bias = tf.get_variable("conv1_biases",
         initializer=(b_init * tf.ones([d/2, c1_filt_dim[-1]], tf.float32)))
-
-        # filter weights for conv2
-        c2_filt = tf.get_variable('conv2_filters',
-                                     shape=c2_filt_dim,
-                                     initializer=w_init)
-
-        c2_bias = tf.get_variable("conv2_biases",
-        initializer=(b_init * tf.ones([d/2/2, c2_filt_dim[-1]], tf.float32)))
 
         # embedding matrix for all words in our vocabulary
         embeddings = tf.get_variable('embedding_weights',
@@ -264,8 +249,6 @@ class DynamicCNN(object):
 
         # count how many samples in this batch (batch_size)
         s = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 0), -1), tf.int32))
-
-        self._test = s
 
         # create a mask to zero out null words
         mask = tf.expand_dims(used, [-1])
@@ -297,35 +280,13 @@ class DynamicCNN(object):
         c1_topk = tf.transpose(c1_topk, [0, 3, 2, 1])
 
         # add bias and non-linear activation
-        c1_act = tf.nn.relu(tf.add(c1_topk, c1_bias))
-
-        """ convolution layer 2 """
-        # pad the inputs
-        c2_padded = tf.pad(c1_act, c2_pad)
-
-        # perform wide convolution 2
-        c2_out = tf.nn.conv2d(c2_padded, c2_filt,
-                                 strides=c2_strides, padding='VALID')
-
-        # perform folding
-        c2_fold = tf.add(c2_out[:, :, ::2, :], c2_out[:, :, 1::2, :])
-
-        # get the dynamic k value
-        k2 = tf.cast(tf.maximum(k_top,
-                        tf.ceil(((L - 2)/L) * tf.cast(s, tf.float32))), tf.int32)
-
-        # take the k2 max pool of the convolution output
-        c2_topk = tf.nn.top_k(tf.transpose(c2_fold, [0, 3, 2, 1]), k2)[0]
-        c2_topk = tf.transpose(c2_topk, [0, 3, 2, 1])
-
-        # add bias and non-linear activation
-        c2_act = tf.nn.relu(tf.add(c2_topk, c2_bias))
+        c1_act = tf.nn.tanh(tf.add(c1_topk, c1_bias))
 
         """ fully connected layer """
         # weightst for fully connected layer
-        flat_size = (d/2/2) * k_top_v * c2_filt_dim[-1]
+        flat_size = (d/2) * k_top_v * c1_filt_dim[-1]
 
-        flat = tf.reshape(c2_act, [num_samp, flat_size])
+        flat = tf.reshape(c1_act, [num_samp, flat_size])
 
         dropout1 = tf.nn.dropout(flat, keep_prob=kp)
 
@@ -381,10 +342,6 @@ class DynamicCNN(object):
     @property
     def loss(self):
         return self._error
-
-    @property
-    def probe(self):
-        return self._test
 
 
 class TextCNN(object):
