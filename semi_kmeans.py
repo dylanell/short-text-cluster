@@ -159,7 +159,8 @@ if __name__ == '__main__':
     if (len(sys.argv) < 8):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./classify.py <data_dir> <model> ' \
-                    '<num_labeled> <emb_dim> <margin> <num_iter> <plot_flag>')
+                    '<num_labeled> <margin> ' \
+                    '<pre_iter> <train_iter> <plot_flag>')
         sys.exit()
 
     # get the type of model were using and chek if valid
@@ -177,15 +178,6 @@ if __name__ == '__main__':
     train_X = np.concatenate([train_X, test_X], axis=0)
     train_Y = np.concatenate([train_Y, test_Y], axis=0)
 
-    # number of labeled samples to use
-    l = int(sys.argv[3])
-
-    # dimension of the learned embedding
-    latent_dim = int(sys.argv[4])
-
-    print('Num Labeled: %d' % l)
-    print('Embed Dim: %d' % latent_dim)
-
     vocab = gensim.corpora.Dictionary.load(data_dir + 'vocabulary.dat')
     vocab_len = len(vocab)
 
@@ -200,11 +192,6 @@ if __name__ == '__main__':
     # size of inputs [n, s] = [num_samples, max_seq_len]
     n, s = train_X.shape
 
-    print n
-
-    # dimensionality of the word embeddings
-    d = 32
-
     # dimensionality of the output (num classes)
     K = len(np.unique(train_Y))
 
@@ -213,6 +200,36 @@ if __name__ == '__main__':
 
     # only use max 6000 samples
     n = min(n, 6000)
+
+    """ hyper parameters """
+    eta = 1e-3
+    alpha = 0.01
+    margin = float(sys.argv[4])
+    l = int(sys.argv[3])            # number of labeled samples to use
+    d = 300                         # dimensionality of the word embeddings
+
+    """ runtime parameters """
+    num_iter = int(sys.argv[6])
+    pretrain_iter = int(sys.argv[5])
+    plot_per = 1
+    batch_size = 128
+    plot = int(sys.argv[7])
+
+    """ model parameters """
+    emb_dims = [vocab_len, d]
+    latent_dim = 100   # dimension of the learned embedding
+
+    print('\n[INFO] Model: %s' % model_type)
+    print('[INFO] Data Source: %s' % data_dir)
+    print('[INFO] Number Labeled: %d' % l)
+    print('[INFO] Pre-Train Iterations: %d' % num_iter)
+    print('[INFO] Training Iterations: %d' % pretrain_iter)
+    print('[INFO] Word Vector Dimension: %d' % d)
+    print('[INFO] Latent Vector Dimension: %d' % latent_dim)
+    print('[INFO] Margin: %.3f' % margin)
+    print('[INFO] Batch Size: %d' % batch_size)
+    print('[INFO] Learning Rate: %f' % eta)
+    print('[INFO] Plotting Loss: %r\n' % bool(plot))
 
     # split into labeled and unlabeled sets and ensure we have a sample
     # from every class in each
@@ -239,30 +256,6 @@ if __name__ == '__main__':
         if ((unique_labeled == K) and (unique_unlabeled==K)):
             break
 
-    """ hyper parameters """
-    eta = 1e-3
-    alpha = 0.001
-    margin = float(sys.argv[5])
-
-    """ runtime parameters """
-    num_iter = int(sys.argv[6])
-    pretrain_iter = 1000
-    plot_per = 1
-    batch_size = 128
-    plot = int(sys.argv[7])
-
-    """ model parameters """
-    emb_dims = [vocab_len, d]
-
-    print('\n[INFO] Model: %s' % model_type)
-    print('[INFO] Data Source: %s' % data_dir)
-    print('[INFO] Number of Iterations: %d' % num_iter)
-    print('[INFO] Word Vector Dimension: %d' % d)
-    print('[INFO] Batch Size: %d' % batch_size)
-    print('[INFO] Learning Rate: %f' % eta)
-    print('[INFO] Latent Dimension: %d' % latent_dim)
-    print('[INFO] Margin: %.3f' % margin)
-    print('[INFO] Plotting Loss: %r\n' % bool(plot))
 
     """ tensorflow ops """
     # keep probability for dropout layers
@@ -284,17 +277,17 @@ if __name__ == '__main__':
         model = LSTM(emb_dims, dims, inputs, targets,
                      NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
     elif (model_type=='tcnn'):
-        num_maps = 100
+        num_maps = 500
         flat_dim = num_maps * 3
         emb_dims = [vocab_len, d]
-        filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
+        filt_dims = [[1, num_maps], [2, num_maps], [3, num_maps]]
         fc_dims = [latent_dim, K]
         model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, kp=keep_prob, eta=eta,
                     out_type='softmax')
     elif (model_type=='dcnn'):
         k_top_v = 5
-        filt_dims = [[3, 12], [3, 8]]
+        filt_dims = [[8, 5]]
         fc_dims = [latent_dim, K]
         model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
                     targets, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,
