@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
-    alpha = 0.01
+    alpha = 0.001
     margin = float(sys.argv[4])
     num_samp = int(sys.argv[7])
     l = int(sys.argv[3])            # number of labeled samples to use
@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
     print('\n[INFO] Model: %s' % model_type)
     print('[INFO] Data Source: %s' % data_dir)
-    print('[INFO] Number Sampled: %d' % num_samp)
+    print('[INFO] Number Sampled: %d' % n)
     print('[INFO] Number Labeled: %d' % l)
     print('[INFO] Pre-Train Iterations: %d' % pretrain_iter)
     print('[INFO] Training Iterations: %d' % num_iter)
@@ -460,7 +460,7 @@ if __name__ == '__main__':
 
         sys.stdout.write('\rEncoding: 100%\n')
         sys.stdout.flush()
-        
+
         np.savetxt('train_latent.dat', O)
         np.savetxt('train_label.dat', B)
 
