@@ -156,11 +156,11 @@ def delta(a, b=None):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 8):
+    if (len(sys.argv) < 9):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./classify.py <data_dir> <model> ' \
                     '<num_labeled> <margin> <pre_iter> ' \
-                    '<train_iter> <out_dir>')
+                    '<train_iter> <samp_size> <out_dir>')
         sys.exit()
 
     # get the type of model were using and chek if valid
@@ -198,13 +198,11 @@ if __name__ == '__main__':
     # for collecting error values
     E = []
 
-    # only use max 6000 samples
-    n = min(n, 6000)
-
     """ hyper parameters """
     eta = 1e-3
     alpha = 0.01
     margin = float(sys.argv[4])
+    num_samp = int(sys.argv[7])
     l = int(sys.argv[3])            # number of labeled samples to use
     d = 300                         # dimensionality of the word embeddings
 
@@ -219,8 +217,13 @@ if __name__ == '__main__':
     emb_dims = [vocab_len, d]
     latent_dim = 100   # dimension of the learned embedding
 
+    # if number samples set, take that many samples
+    if (num_samp != 0):
+        n = num_samp
+
     print('\n[INFO] Model: %s' % model_type)
     print('[INFO] Data Source: %s' % data_dir)
+    print('[INFO] Number Sampled: %d' % num_samp)
     print('[INFO] Number Labeled: %d' % l)
     print('[INFO] Pre-Train Iterations: %d' % pretrain_iter)
     print('[INFO] Training Iterations: %d' % num_iter)
@@ -458,7 +461,7 @@ if __name__ == '__main__':
         sys.stdout.write('\rEncoding: 100%\n')
         sys.stdout.flush()
 
-        out_dir = sys.argv[7]
+        out_dir = sys.argv[8]
 
         np.savetxt(out_dir + 'train_latent.dat', O)
         np.savetxt(out_dir + 'train_label.dat', B)
