@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
     """ hyper parameters """
     eta = 1e-3
-    alpha = 0.001
+    alpha = 0.01
     margin = float(sys.argv[4])
     num_samp = int(sys.argv[7])
     l = int(sys.argv[3])            # number of labeled samples to use
