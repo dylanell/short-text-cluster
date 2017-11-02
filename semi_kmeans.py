@@ -156,11 +156,11 @@ def delta(a, b=None):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 9):
+    if (len(sys.argv) < 8):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./classify.py <data_dir> <model> ' \
                     '<num_labeled> <margin> <pre_iter> ' \
-                    '<train_iter> <samp_size> <out_dir>')
+                    '<train_iter> <samp_size>')
         sys.exit()
 
     # get the type of model were using and chek if valid
@@ -460,11 +460,9 @@ if __name__ == '__main__':
 
         sys.stdout.write('\rEncoding: 100%\n')
         sys.stdout.flush()
-
-        out_dir = sys.argv[8]
-
-        np.savetxt(out_dir + 'train_latent.dat', O)
-        np.savetxt(out_dir + 'train_label.dat', B)
+        
+        np.savetxt('train_latent.dat', O)
+        np.savetxt('train_label.dat', B)
 
         sess.close()
 
