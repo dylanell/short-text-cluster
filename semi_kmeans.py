@@ -159,8 +159,8 @@ if __name__ == '__main__':
     if (len(sys.argv) < 8):
         print('[ERROR] not enough cmd line arguments')
         print('[USAGE] ./classify.py <data_dir> <model> ' \
-                    '<num_labeled> <margin> ' \
-                    '<pre_iter> <train_iter> <plot_flag>')
+                    '<num_labeled> <margin> <pre_iter> ' \
+                    '<train_iter> <out_dir>')
         sys.exit()
 
     # get the type of model were using and chek if valid
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     pretrain_iter = int(sys.argv[5])
     plot_per = 1
     batch_size = 128
-    plot = int(sys.argv[7])
+    plot = 0
 
     """ model parameters """
     emb_dims = [vocab_len, d]
@@ -458,8 +458,10 @@ if __name__ == '__main__':
         sys.stdout.write('\rEncoding: 100%\n')
         sys.stdout.flush()
 
-        np.savetxt('train_latent.dat', O)
-        np.savetxt('train_label.dat', B)
+        out_dir = sys.argv[7]
+
+        np.savetxt(out_dir + 'train_latent.dat', O)
+        np.savetxt(out_dir + 'train_label.dat', B)
 
         sess.close()
 
