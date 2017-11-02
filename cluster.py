@@ -13,37 +13,24 @@ if __name__ == '__main__':
     np.set_printoptions(precision=3, linewidth=1000, suppress=True)
 
     # retrieve command line args
-    if (len(sys.argv) < 4):
+    if (len(sys.argv) < 5):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./cluster.py <algorithm> <samples_fp> <labels_fp> <K>')
+        print('[USAGE] ./cluster.py <samples_fp> <labels_fp> <K> <out_dir>')
         sys.exit()
 
     # get args
-    algo = sys.argv[1]
-    X = np.loadtxt(sys.argv[2])
-    T = np.loadtxt(sys.argv[3]).astype(np.int32)
-    K = int(sys.argv[4])
+    X = np.loadtxt(sys.argv[1])
+    T = np.loadtxt(sys.argv[2]).astype(np.int32)
+    K = int(sys.argv[3])
 
     n, d = X.shape
 
     # must be 1D for scikit learn metrics
     T = T.reshape((n, ))
 
-    if (algo == 'dbscan'):
-        print('dbscan')
-        exit()
-        # create a dbscan model
-        #model = cluster.DBSCAN(n_clusters=K, init='k-means++',
-        #                       max_iter=300, n_init=100)
-    elif (algo == 'kmeans'):
-        # create a kmeans model
-        model = cluster.KMeans(n_clusters=K, init='k-means++',
-                               max_iter=300, n_init=100)
-    else:
-        print('[INFO] unknown clustering algorithm %s; using kmeans' % algo)
-        # create a kmeans model
-        model = cluster.KMeans(n_clusters=K, init='k-means++',
-                               max_iter=300, n_init=100)
+    # create a kmeans model
+    model = cluster.KMeans(n_clusters=K, init='k-means++',
+                           max_iter=300, n_init=100)
 
     # convert sparse matrix X to dense array if using hierarchical clustering
     L = model.fit_predict(X)
@@ -61,10 +48,23 @@ if __name__ == '__main__':
 
     print C
 
-    F_score = cu.FMeasure(C)
+    f_score = cu.FMeasure(C)
 
     # get the NMI score of the clustering
-    score = metrics.adjusted_mutual_info_score(T, L)
+    ami_score = metrics.adjusted_mutual_info_score(T, L)
 
-    print 'AMI:', score
-    print 'F1:', F_score
+    print 'AMI:', ami_score
+    print 'F:', f_score
+
+    if ((not np.isnan(ami_score)) and (not np.isnan(f_score))):
+        out_dir = sys.argv[4]
+
+        ami = np.loadtxt(out_dir + 'ami_log.txt')
+        ami = np.append(ami, ami_score)
+        np.savetxt(out_dir + 'ami_log.txt', ami)
+
+        f = np.loadtxt(out_dir + 'f_log.txt')
+        f = np.append(f, f_score)
+        np.savetxt(out_dir + 'f_log.txt', f)
+    else:
+        print('NAN found, not a good clustering')
