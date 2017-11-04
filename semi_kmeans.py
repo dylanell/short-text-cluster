@@ -419,7 +419,13 @@ if __name__ == '__main__':
             # colelct the current loss
             e = sess.run(kmeans_loss, train_feed)
             inst_E.append(e)
-            print e
+
+            # get current ami score
+            curr_assign = np.argmax(R, axis=1)
+            ami_score = metrics.adjusted_mutual_info_score(train_Y, curr_assign)
+
+            print e, ami_score
+
 
             # if we have hit a plotting period and we are in plotting
             # mode, calculate the current batch loss and append to
