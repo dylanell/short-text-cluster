@@ -18,8 +18,12 @@ import matplotlib.pyplot as plt
 
 # src: https://stackoverflow.com/questions/8317022/get-intersecting-rows-across-two-2d-numpy-arrays
 def arrayRowIntersection(a,b):
-   tmp=np.prod(np.swapaxes(a[:,:,None],1,2)==b,axis=2)
-   return a[np.sum(np.cumsum(tmp,axis=0)*tmp==1,axis=1).astype(bool)]
+    #c = np.swapaxes(a[:,:,None],1,2)
+    #tmp=np.prod(np.swapaxes(a[:,:,None],1,2)==b,axis=2)
+    #return a[np.sum(np.cumsum(tmp,axis=0)*tmp==1,axis=1).astype(bool)]
+    av = a.view([('', a.dtype)] * a.shape[1]).ravel()
+    bv = b.view([('', b.dtype)] * b.shape[1]).ravel()
+    return np.intersect1d(av, bv).view(a.dtype).reshape(-1, a.shape[1])
 
 # uses scikit learn to solve the minimum assignment problem to construct
 # an optimal mapping from true labels T to current labels L
