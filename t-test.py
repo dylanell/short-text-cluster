@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Compares classifier A with classifier B with a confidence interval.
+Compares metric A with metric B with a confidence interval.
 
 """
 
@@ -17,14 +17,14 @@ if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 4):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./t-test.py <acc_a> <acc_b> <conf>')
+        print('[USAGE] ./t-test.py <met_a> <met_b> <conf>')
         sys.exit()
 
-    acc_a = np.loadtxt(sys.argv[1])
-    acc_b = np.loadtxt(sys.argv[2])
+    met_a = np.loadtxt(sys.argv[1])
+    met_b = np.loadtxt(sys.argv[2])
     conf = float(sys.argv[3])
 
-    delta = acc_a - acc_b
+    delta = met_a - met_b
 
     mu_delta = np.mean(delta)
     var_delta = np.var(delta)
