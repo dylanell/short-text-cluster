@@ -158,7 +158,7 @@ if __name__ == '__main__':
     # retrieve command line args
     if (len(sys.argv) < 8):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./classify.py <data_dir> <model> ' \
+        print('[USAGE] ./semi_kmeans.py <data_dir> <model> ' \
                     '<num_labeled> <margin> <pre_iter> ' \
                     '<train_iter> <samp_size>')
         sys.exit()
