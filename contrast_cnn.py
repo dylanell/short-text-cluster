@@ -66,8 +66,8 @@ if __name__ == '__main__':
     margin = 2.0
 
     """ runtime parameters """
-    num_iter = 200000
-    plot_per = 500
+    num_iter = 5000
+    plot_per = 50
     batch_size = 1
     plot = 1
 
