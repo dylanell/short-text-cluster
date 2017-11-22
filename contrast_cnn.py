@@ -39,9 +39,6 @@ if __name__ == '__main__':
     vocab = gensim.corpora.Dictionary.load(data_dir + 'vocabulary.dat')
     vocab_len = len(vocab)
 
-    train_OH = label2OneHot(np.reshape(train_Y, (train_Y.shape[0], 1)))
-    test_OH = label2OneHot(np.reshape(test_Y, (test_Y.shape[0], 1)))
-
     # find the index of the NULL word '__'
     rev_vocab = dict()
     for key, value in vocab.iteritems():
@@ -62,7 +59,7 @@ if __name__ == '__main__':
     eta = 1e-4
     num_maps = 100
     flat_dim = num_maps * 3
-    latent_dim = 50
+    latent_dim = 100
     margin = 2.0
 
     """ runtime parameters """
@@ -130,7 +127,7 @@ if __name__ == '__main__':
     inputs = tf.placeholder(tf.int32, [None, None])
 
     # placeholder for the rnn targets (one-hot encodings)
-    targets = tf.placeholder(tf.float32, [None, 1])
+    targets = tf.placeholder(tf.float32, [None])
 
     # embedding matrix for all words in our vocabulary
     embeddings = tf.get_variable('embedding_weights',
@@ -222,7 +219,7 @@ if __name__ == '__main__':
     l_s = 0.5 * (dist**2)
     l_d = 0.5 * (tf.maximum(0.0, margin - dist)**2)
 
-    loss = (1.0 - targets[0, 0])*l_s + (targets[0, 0]*l_d)
+    loss = (1.0 - targets)*l_s + (targets*l_d)
 
     # define the optimizer
     optimizer = tf.train.AdamOptimizer(learning_rate=eta).minimize(loss)
@@ -246,14 +243,14 @@ if __name__ == '__main__':
 
             if (des > 0.5):
                 # choose a disimilar sample
-                tar = np.ones((1, 1))
+                tar = np.ones((1))
                 while True:
                     neighbor = np.random.randint(0, n)
                     if (train_Y[sample] != train_Y[neighbor]):
                         break
             else:
                 # choose a similar sample
-                tar = np.zeros((1, 1))
+                tar = np.zeros((1))
                 while True:
                     neighbor = np.random.randint(0, n)
                     if ((train_Y[sample] == train_Y[neighbor]) and  \
@@ -280,6 +277,7 @@ if __name__ == '__main__':
                 e = np.mean(inst_E)
                 E.append(e)
                 inst_E = []
+                print e
                 out = sess.run(outputs, train_feed)
                 if(np.any(np.isnan(out)) == True):
                     print('GOT NANS')
@@ -317,7 +315,7 @@ if __name__ == '__main__':
     y = np.loadtxt('loss.csv', delimiter=',')
 
     if plot:
-        plt.plot(y)
-        #plt.plot(range(len(E)), E)
+        #plt.plot(y)
+        plt.plot(range(len(E)), E)
         plt.show()
     # end

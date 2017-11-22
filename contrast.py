@@ -66,14 +66,10 @@ def getPairWiseBatch(X, Y, batch_size):
 
 if __name__ == '__main__':
     # retrieve command line args
-    if (len(sys.argv) < 3):
+    if (len(sys.argv) < 2):
         print('[ERROR] not enough cmd line arguments')
-        print('[USAGE] ./semi_kmeans.py <data_dir> <model>')
+        print('[USAGE] ./vanilla_cnn.py <data_dir>')
         sys.exit()
-
-    # get the type of model were using and chek if valid
-    model_type = sys.argv[2]
-    validateModel(model_type)
 
     # get the data
     data_dir = sys.argv[1]
@@ -97,47 +93,28 @@ if __name__ == '__main__':
     del vocab
     del rev_vocab
 
-    # size of inputs [n, s] = [num_samples, max_seq_len]
     n, s = train_X.shape
+    d = 64
 
-    # dimensionality of the output (num classes)
     K = len(np.unique(train_Y))
 
     # for collecting error values
     E = []
 
     """ hyper parameters """
-    eta = 1e-5
-    num_samp = 0
-    l = 595                         # number of labeled samples to use
+    eta = 1e-3
+    num_maps = 100
+    flat_dim = num_maps * 3
+    latent_dim = 100
+    margin = 5.0
 
     """ runtime parameters """
-    num_iter = 1000
-    plot_per = 100
-    batch_size = 1
+    num_iter = 5000
+    plot_per = 50
+    batch_size = 64
     plot = 1
 
-    """ model parameters """
-    d = 64                          # dimensionality of the word embeddings
-    latent_dim = 100                # dimension of the learned embedding
-    margin = 2.0
-    emb_dims = [vocab_len, d]
-
-    # if number samples set, take that many samples
-    if (num_samp != 0):
-        n = num_samp
-
-    print('\n[INFO] Model: %s' % model_type)
-    print('[INFO] Data Source: %s' % data_dir)
-    print('[INFO] Number Sampled: %d' % n)
-    print('[INFO] Number Labeled: %d' % l)
-    print('[INFO] Number of Iterations: %d' % num_iter)
-    print('[INFO] Word Vector Dimension: %d' % d)
-    print('[INFO] Latent Vector Dimension: %d' % latent_dim)
-    print('[INFO] Margin: %.3f' % margin)
-    print('[INFO] Batch Size: %d' % batch_size)
-    print('[INFO] Learning Rate: %f' % eta)
-    print('[INFO] Plotting Loss: %r\n' % bool(plot))
+    l = 595
 
     # split into labeled and unlabeled sets and ensure we have a sample
     # from every class in each
@@ -164,48 +141,149 @@ if __name__ == '__main__':
         if ((unique_labeled == K) and (unique_unlabeled==K)):
             break
 
-    """ tensorflow ops """
-    # keep probability for dropout layers
-    keep_prob = tf.placeholder(tf.float32)
+    """ conv hyper params """
+    # filter = # [height, width, input_depth, num_filters]
+    c1_filt_dim = [3, d, 1, num_maps]
+    c1_strides = [1, 1, 1, 1]
+    c1_pad = [[0, 0],
+              [c1_filt_dim[0] - 1, c1_filt_dim[0] - 1],
+              [0, 0],
+              [0, 0]]
 
-    # placeholder for inputs [batch_size, max_seq_len]
+    # filter = # [height, width, input_depth, num_filters]
+    c2_filt_dim = [4, d, 1, num_maps]
+    c2_strides = [1, 1, 1, 1]
+    c2_pad = [[0, 0],
+              [c2_filt_dim[0] - 1, c2_filt_dim[0] - 1],
+              [0, 0],
+              [0, 0]]
+
+    # filter = # [height, width, input_depth, num_filters]
+    c3_filt_dim = [5, d, 1, num_maps]
+    c3_strides = [1, 1, 1, 1]
+    c3_pad = [[0, 0],
+              [c3_filt_dim[0] - 1, c3_filt_dim[0] - 1],
+              [0, 0],
+              [0, 0]]
+
+
+    """ tensor flow ops """
+    # initializers for any weights and biases in the model
+    w_init = tf.contrib.layers.xavier_initializer()
+    b_init = 0.01
+
+    # filter weights for conv1
+    c1_filt = tf.get_variable('conv1_filters',
+                                 shape=c1_filt_dim,
+                                 initializer=w_init)
+
+    c1_bias = tf.get_variable("conv1_biases",
+    initializer=(b_init * tf.ones([1], tf.float32)))
+
+    # filter weights for conv1
+    c2_filt = tf.get_variable('conv2_filters',
+                                 shape=c2_filt_dim,
+                                 initializer=w_init)
+
+    c2_bias = tf.get_variable("conv2_biases",
+    initializer=(b_init * tf.ones([1], tf.float32)))
+
+    # filter weights for conv1
+    c3_filt = tf.get_variable('conv3_filters',
+                                 shape=c3_filt_dim,
+                                 initializer=w_init)
+
+    c3_bias = tf.get_variable("conv3_biases",
+    initializer=(b_init * tf.ones([1], tf.float32)))
+
+    # cnn - want shape [1, d, s], rnn - want shape [s, 1, 300]
     inputs = tf.placeholder(tf.int32, [None, None])
 
-    # placeholder for targets [batch_size, num_classes]
+    # placeholder for the rnn targets (one-hot encodings)
     targets = tf.placeholder(tf.float32, [None])
 
-    targets_OH = tf.one_hot(tf.cast(tf.concat([targets, targets], axis=0), tf.int32), K)
+    # embedding matrix for all words in our vocabulary
+    embeddings = tf.get_variable('embedding_weights',
+                                 shape =[vocab_len, d],
+                                 initializer=w_init)
 
-    # initialize the model (model_type)
-    if (model_type=='nbow'):
-        dims = [latent_dim, K]
-        model = NBOW(emb_dims, dims, inputs, targets_OH,
-                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
-    elif (model_type=='lstm'):
-        dims = [latent_dim, K]
-        model = LSTM(emb_dims, dims, inputs, targets_OH,
-                     NULL_IDX, kp=keep_prob, eta=eta, out_type='softmax')
-    elif (model_type=='tcnn'):
-        num_maps = 100
-        flat_dim = num_maps * 3
-        emb_dims = [vocab_len, d]
-        filt_dims = [[3, num_maps], [4, num_maps], [5, num_maps]]
-        fc_dims = [latent_dim, K]
-        model = TextCNN(emb_dims, filt_dims, fc_dims, inputs,
-                    targets_OH, NULL_IDX, kp=keep_prob, eta=eta,
-                    out_type='softmax')
-    elif (model_type=='dcnn'):
-        k_top_v = 5
-        filt_dims = [[8, 5]]
-        fc_dims = [latent_dim, K]
-        model = DynamicCNN(emb_dims, filt_dims, fc_dims, inputs,
-                    targets_OH, NULL_IDX, k_top_v=k_top_v, kp=keep_prob,
-                    eta=eta, out_type='softmax')
-    else:
-        print('model \'%s\' is not valid' % model_type)
+    """ define the model """
+    def model(inputs):
+        """ embedding and reshaping """
+        # mark the used words in each sample
+        used = tf.cast(tf.not_equal(inputs, NULL_IDX), tf.float32)
 
-    outputs = model.encode
+        # length of this input
+        num_samp = tf.reduce_sum(tf.cast(tf.greater(tf.reduce_sum(used, 1), -1), tf.int32))
 
+        # create a mask to zero out null words
+        mask = tf.expand_dims(used, [-1])
+
+        # embed the words and mask
+        inputs_emb = mask * tf.nn.embedding_lookup(embeddings, inputs)
+
+        # reshape inputs to be like a batch of "images" with pixel depth 1,
+        # therefore making them 4D tensors
+        inputs_resh = tf.expand_dims(inputs_emb, -1)
+
+        """ convolution layer 1 """
+        # pad the inputs
+        c1_padded = tf.pad(inputs_resh, c1_pad)
+
+        # perform wide convolution 1
+        c1_out = tf.nn.conv2d(c1_padded, c1_filt,
+                                 strides=c1_strides, padding='VALID')
+
+        c1_biased = c1_out + c1_bias
+
+        c1_act = tf.nn.tanh(c1_biased)
+
+        c1_pool = tf.reduce_max(c1_act, axis=1)
+
+        """ convolution layer 2 """
+        # pad the inputs
+        c2_padded = tf.pad(inputs_resh, c2_pad)
+
+        # perform wide convolution 1
+        c2_out = tf.nn.conv2d(c2_padded, c2_filt,
+                                 strides=c2_strides, padding='VALID')
+
+        c2_biased = c2_out + c2_bias
+
+        c2_act = tf.nn.tanh(c2_biased)
+
+        c2_pool = tf.reduce_max(c2_act, axis=1)
+
+        """ convolution layer 3 """
+        # pad the inputs
+        c3_padded = tf.pad(inputs_resh, c3_pad)
+
+        # perform wide convolution 1
+        c3_out = tf.nn.conv2d(c3_padded, c3_filt,
+                                 strides=c3_strides, padding='VALID')
+
+        c3_biased = c3_out + c3_bias
+
+        c3_act = tf.nn.tanh(c3_biased)
+
+        c3_pool = tf.reduce_max(c3_act, axis=1)
+
+
+        """ fully connected layer """
+        concat = tf.concat([c1_pool, c2_pool, c3_pool], axis=2)
+        flat = tf.reshape(concat, [num_samp, flat_dim])
+
+        output = tf.contrib.layers.fully_connected(flat, latent_dim,
+                                                 activation_fn=tf.nn.tanh)
+
+        # normalize the features
+        output_norm = tf.nn.l2_normalize(output, dim=1)
+
+        return output_norm
+
+    outputs = model(inputs)
+
+    """ contrastive loss """
     # get diff between every pair of rows using tensor slices
     diff = outputs[0::2, :] - outputs[1::2, :]
     dist = tf.norm(diff, ord=1, axis=1)
@@ -231,21 +309,10 @@ if __name__ == '__main__':
         for i in range(num_iter):
             # grab a randomly chosen batch from the training data
             batch_X, batch_Y = getPairWiseBatch(labeled_X, labeled_Y, batch_size)
-            train_feed = {inputs: batch_X, targets: batch_Y, keep_prob: 0.5}
-
-            #print batch_Y
-            #probe = sess.run(dist, train_feed)
-            #print probe
-            #probe = sess.run(l_s, train_feed)
-            #print probe
-            #probe = sess.run(l_d, train_feed)
-            #print probe
-            #probe = sess.run(error, train_feed)
-            #print probe
-            #exit()
+            train_feed = {inputs: batch_X, targets: batch_Y}
 
             # run a step of the autoencoder trainer
-            sess.run(model.optimize, train_feed)
+            sess.run(optimizer, train_feed)
 
             # get loss of this sample
             e = sess.run(loss, train_feed)
@@ -269,6 +336,19 @@ if __name__ == '__main__':
 
         sys.stdout.write('\r[INFO] Training: 100%\n')
         sys.stdout.flush()
+
+        O = np.zeros((n, latent_dim))
+        B = np.zeros((n))
+        for i in range(n):
+            test_feed = {inputs: train_X[None, i, :]}
+
+            out = sess.run(outputs, test_feed)
+
+            O[i, :] = out
+            B[i] = train_Y[i]
+
+        np.savetxt('train_latent.dat', O)
+        np.savetxt('train_label.dat', B)
 
         sess.close()
 
